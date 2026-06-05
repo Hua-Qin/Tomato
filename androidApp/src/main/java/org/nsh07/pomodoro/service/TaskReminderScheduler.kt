@@ -22,6 +22,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import java.util.Calendar
 import org.nsh07.pomodoro.data.Task
 
 class TaskReminderScheduler(private val context: Context) {
@@ -29,9 +30,11 @@ class TaskReminderScheduler(private val context: Context) {
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     fun scheduleReminder(task: Task) {
-        if (!task.reminderEnabled || task.dueDate == null || task.dueTime == null) return
+        val dueDate = task.dueDate
+        val dueTime = task.dueTime
+        if (!task.reminderEnabled || dueDate == null || dueTime == null) return
 
-        val reminderTime = calculateReminderTime(task.dueDate, task.dueTime, task.reminderMinutesBefore)
+        val reminderTime = calculateReminderTime(dueDate, dueTime, task.reminderMinutesBefore)
         if (reminderTime <= System.currentTimeMillis()) return
 
         val intent = Intent(context, TaskReminderReceiver::class.java).apply {
@@ -86,7 +89,7 @@ class TaskReminderScheduler(private val context: Context) {
     }
 
     private fun calculateReminderTime(dueDate: Long, dueTime: Int, minutesBefore: Int): Long {
-        val calendar = java.util.Calendar.getInstance().apply {
+        val calendar = Calendar.getInstance().apply {
             timeInMillis = dueDate
             val hours = dueTime / 60
             val minutes = dueTime % 60

@@ -102,14 +102,17 @@ import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerViewModel
 import org.nsh07.pomodoro.utils.onBack
 import tomato.shared.generated.resources.Res
+import tomato.shared.generated.resources.collection
 import tomato.shared.generated.resources.note_add
 import tomato.shared.generated.resources.note_add_filled
+import tomato.shared.generated.resources.records
 import tomato.shared.generated.resources.settings
 import tomato.shared.generated.resources.settings_filled
 import tomato.shared.generated.resources.task_list
 import tomato.shared.generated.resources.task_list_filled
-import tomato.shared.generated.resources.timer
+import tomato.shared.generated.resources.tasks
 import tomato.shared.generated.resources.timer_filled
+import tomato.shared.generated.resources.timer_outlined
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -129,6 +132,7 @@ fun AppScreen(
 
     val uiState by timerViewModel.timerState.collectAsStateWithLifecycle()
     val settingsState by settingsViewModel.settingsState.collectAsStateWithLifecycle()
+    val recordsState by recordsViewModel.state.collectAsStateWithLifecycle()
     val progress by timerViewModel.progress.collectAsStateWithLifecycle()
 
     val layoutDirection = LocalLayoutDirection.current
@@ -158,7 +162,7 @@ fun AppScreen(
             ) {},
             NavItem(
                 Screen.Records.Main,
-                Res.drawable.timer,
+                Res.drawable.timer_outlined,
                 Res.drawable.timer_filled,
                 Res.string.records
             ) {},
@@ -340,7 +344,8 @@ fun AppScreen(
                     entry<Screen.Records.Main> {
                         RecordsScreen(
                             contentPadding = contentPadding,
-                            onAction = recordsViewModel::onAction
+                            onAction = recordsViewModel::onAction,
+                            state = recordsState
                         )
                     }
 
