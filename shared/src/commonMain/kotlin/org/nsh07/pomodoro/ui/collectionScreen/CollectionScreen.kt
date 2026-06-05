@@ -169,9 +169,9 @@ fun CollectionScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(
-                    items = collectionState.notes,
+                    collectionState.notes,
                     key = { it.id },
-                    itemContentType = { "note" }
+                    contentType = { "note" }
                 ) { note ->
                     NoteCard(
                         note = note,

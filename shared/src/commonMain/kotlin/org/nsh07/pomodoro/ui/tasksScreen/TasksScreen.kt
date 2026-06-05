@@ -62,6 +62,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -211,9 +212,9 @@ fun TasksScreen(
                         )
                     }
                     items(
-                        items = tasksState.pendingTasks,
+                        tasksState.pendingTasks,
                         key = { it.id },
-                        itemContentType = { "pending_task" }
+                        contentType = { "pending_task" }
                     ) { task ->
                         SwipeableTaskItem(
                             task = task,
@@ -239,9 +240,9 @@ fun TasksScreen(
                         )
                     }
                     items(
-                        items = tasksState.completedTasks,
+                        tasksState.completedTasks,
                         key = { it.id },
-                        itemContentType = { "completed_task" }
+                        contentType = { "completed_task" }
                     ) { task ->
                         SwipeableTaskItem(
                             task = task,
@@ -350,7 +351,6 @@ private fun SwipeableTaskItem(
         // Background swipe indicators
         Row(
             modifier = Modifier
-                .fillMaxWidth()
                 .matchParentSize()
                 .background(
                     color = if (offsetX.value < -swipeThreshold) colorScheme.error
@@ -441,7 +441,7 @@ private fun TaskItem(
                     .clickable(onClick = onCheck)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    AnimatedVisibility(visible = task.isCompleted) {
+                    androidx.compose.animation.AnimatedVisibility(visible = task.isCompleted) {
                         Icon(
                             painter = painterResource(Res.drawable.check),
                             contentDescription = null,
