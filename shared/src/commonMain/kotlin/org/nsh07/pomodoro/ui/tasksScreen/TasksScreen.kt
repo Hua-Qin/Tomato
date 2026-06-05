@@ -48,7 +48,7 @@ import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeExtendedFloatingActionButton
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Surface
@@ -75,15 +75,14 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.nsh07.pomodoro.data.Task
 import org.nsh07.pomodoro.ui.tasksScreen.viewModel.TasksAction
 import org.nsh07.pomodoro.ui.tasksScreen.viewModel.TasksViewModel
-import org.nsh07.pomodoro.ui.theme.CustomColors
 import tomato.shared.generated.resources.Res
+import tomato.shared.generated.resources.add
 import tomato.shared.generated.resources.add_task
 import tomato.shared.generated.resources.alarm
 import tomato.shared.generated.resources.check
 import tomato.shared.generated.resources.clear
 import tomato.shared.generated.resources.completed_tasks
 import tomato.shared.generated.resources.delete
-import tomato.shared.generated.resources.flag
 import tomato.shared.generated.resources.no_tasks
 import tomato.shared.generated.resources.no_tasks_hint
 import tomato.shared.generated.resources.pending_tasks
@@ -102,8 +101,6 @@ fun TasksScreen(
     viewModel: TasksViewModel = koinViewModel()
 ) {
     val tasksState by viewModel.tasksState.collectAsStateWithLifecycle()
-
-    val topBarColors = CustomColors.topBarColors
     val weekStart = remember {
         Calendar.getInstance().apply {
             set(Calendar.DAY_OF_WEEK, firstDayOfWeek)
@@ -133,14 +130,11 @@ fun TasksScreen(
                 .fillMaxSize()
                 .padding(contentPadding)
         ) {
-            TopAppBar(
-                title = {
-                    Text(
-                        monthFormatter.format(Date(tasksState.selectedDate)),
-                        style = typography.titleLarge
-                    )
-                },
-                colors = topBarColors
+            // Month title - compact
+            Text(
+                text = monthFormatter.format(Date(tasksState.selectedDate)),
+                style = typography.titleLarge,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 4.dp)
             )
 
             // Week calendar
@@ -292,7 +286,7 @@ fun TasksScreen(
         }
 
         // FAB
-        LargeExtendedFloatingActionButton(
+        SmallFloatingActionButton(
             onClick = { onAction(TasksAction.ShowAddDialog) },
             containerColor = colorScheme.primaryContainer,
             contentColor = colorScheme.onPrimaryContainer,
@@ -304,11 +298,10 @@ fun TasksScreen(
                 )
         ) {
             Icon(
-                painter = painterResource(Res.drawable.check),
-                contentDescription = null,
+                painter = painterResource(Res.drawable.add),
+                contentDescription = stringResource(Res.string.add_task),
                 modifier = Modifier.size(24.dp)
             )
-            Text(stringResource(Res.string.add_task))
         }
     }
 
@@ -494,17 +487,27 @@ private fun TaskItem(
                         }
                     }
                     if (task.priority > 0) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                painter = painterResource(Res.drawable.flag),
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = when (task.priority) {
-                                    1 -> colorScheme.outline
-                                    2 -> colorScheme.tertiary
-                                    3 -> colorScheme.error
-                                    else -> colorScheme.outline
-                                }
+                        val priorityText = when (task.priority) {
+                            1 -> stringResource(Res.string.priority_low)
+                            2 -> stringResource(Res.string.priority_medium)
+                            3 -> stringResource(Res.string.priority_high)
+                            else -> ""
+                        }
+                        val priorityColor = when (task.priority) {
+                            1 -> colorScheme.outline
+                            2 -> colorScheme.tertiary
+                            3 -> colorScheme.error
+                            else -> colorScheme.outline
+                        }
+                        Surface(
+                            shape = CircleShape,
+                            color = priorityColor.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                text = priorityText,
+                                style = typography.labelSmall,
+                                color = priorityColor,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                             )
                         }
                     }

@@ -92,6 +92,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.nsh07.pomodoro.di.FlavorUI
 import org.nsh07.pomodoro.service.TimerService
 import org.nsh07.pomodoro.ui.collectionScreen.CollectionScreen
+import org.nsh07.pomodoro.ui.collectionScreen.NoteEditScreen
+import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionAction
 import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionViewModel
 import org.nsh07.pomodoro.ui.recordsScreen.RecordsScreen
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsViewModel
@@ -188,6 +190,15 @@ fun AppScreen(
 
     var showPaywall by remember { mutableStateOf(false) }
 
+    // Wrapper to intercept navigation actions from CollectionScreen
+    val collectionActionHandler: (CollectionAction) -> Unit = { action ->
+        when (action) {
+            is CollectionAction.NavigateToAddNote -> backStack.add(Screen.Collection.AddNote)
+            is CollectionAction.NavigateToEditNote -> backStack.add(Screen.Collection.EditNote(action.noteId))
+            else -> collectionViewModel.onAction(action)
+        }
+    }
+
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
@@ -224,7 +235,7 @@ fun AppScreen(
                     Alignment.Center
                 ) {
                     HorizontalFloatingToolbar(
-                        expanded = true,
+                        expanded = toolbarScrollBehavior.state.isExpanded,
                         scrollBehavior = toolbarScrollBehavior,
                         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
                             toolbarContainerColor = primaryContainer,
@@ -340,7 +351,25 @@ fun AppScreen(
                     entry<Screen.Collection.Main> {
                         CollectionScreen(
                             contentPadding = contentPadding,
-                            onAction = collectionViewModel::onAction
+                            onAction = collectionActionHandler
+                        )
+                    }
+
+                    entry<Screen.Collection.AddNote> {
+                        NoteEditScreen(
+                            noteId = null,
+                            contentPadding = contentPadding,
+                            onAction = collectionActionHandler,
+                            onBack = { if (backStack.size > 1) backStack.removeLastOrNull() }
+                        )
+                    }
+
+                    entry<Screen.Collection.EditNote> { editNote ->
+                        NoteEditScreen(
+                            noteId = editNote.noteId,
+                            contentPadding = contentPadding,
+                            onAction = collectionActionHandler,
+                            onBack = { if (backStack.size > 1) backStack.removeLastOrNull() }
                         )
                     }
 

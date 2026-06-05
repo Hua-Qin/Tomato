@@ -43,7 +43,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeExtendedFloatingActionButton
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
@@ -209,20 +209,8 @@ fun CollectionScreen(
         }
 
         // FAB
-        LargeExtendedFloatingActionButton(
-            onClick = {
-                val now = System.currentTimeMillis()
-                onAction(
-                    CollectionAction.AddNote(
-                        Note(
-                            title = "",
-                            content = "",
-                            createdAt = now,
-                            updatedAt = now
-                        )
-                    )
-                )
-            },
+        SmallFloatingActionButton(
+            onClick = { onAction(CollectionAction.NavigateToAddNote) },
             containerColor = colorScheme.primaryContainer,
             contentColor = colorScheme.onPrimaryContainer,
             modifier = Modifier
@@ -234,10 +222,9 @@ fun CollectionScreen(
         ) {
             Icon(
                 painterResource(Res.drawable.add),
-                contentDescription = null,
+                contentDescription = stringResource(Res.string.add_note),
                 modifier = Modifier.size(24.dp)
             )
-            Text(stringResource(Res.string.add_note))
         }
     }
 }
@@ -259,7 +246,7 @@ private fun NoteCard(
         modifier = modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = { /* Navigate to edit */ },
+                onClick = { onAction(CollectionAction.NavigateToEditNote(note.id)) },
                 onLongClick = { showMenu = true }
             )
     ) {
@@ -343,6 +330,7 @@ private fun NoteCard(
                 )
             },
             onClick = {
+                onAction(CollectionAction.NavigateToEditNote(note.id))
                 showMenu = false
             }
         )

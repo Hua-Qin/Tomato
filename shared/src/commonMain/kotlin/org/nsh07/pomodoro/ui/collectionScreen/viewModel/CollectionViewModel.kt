@@ -69,6 +69,8 @@ class CollectionViewModel(
             is CollectionAction.Search -> search(action.query)
             is CollectionAction.StartSearch -> startSearch()
             is CollectionAction.StopSearch -> stopSearch()
+            is CollectionAction.NavigateToAddNote -> { /* Handled by AppScreen navigation */ }
+            is CollectionAction.NavigateToEditNote -> { /* Handled by AppScreen navigation */ }
         }
     }
 

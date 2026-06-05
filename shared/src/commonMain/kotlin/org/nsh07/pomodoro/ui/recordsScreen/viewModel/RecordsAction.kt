@@ -33,4 +33,8 @@ sealed interface RecordsAction {
     data object ShowAddCounterSheet : RecordsAction
     data object HideAddCounterSheet : RecordsAction
     data class SetStatsPeriod(val period: StatsPeriod) : RecordsAction
+    data object ToggleTimer : RecordsAction
+    data object ResetTimer : RecordsAction
+    data object SkipTimer : RecordsAction
+    data object StartInfiniteMode : RecordsAction
 }

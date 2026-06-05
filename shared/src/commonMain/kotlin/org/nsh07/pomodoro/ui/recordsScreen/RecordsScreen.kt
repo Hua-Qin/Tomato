@@ -22,6 +22,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -169,6 +171,22 @@ fun RecordsScreen(
             }
         }
     }
+
+    // Add custom timer sheet
+    if (state.showAddTimerSheet) {
+        AddCustomTimerSheet(
+            onDismiss = { onAction(RecordsAction.HideAddTimerSheet) },
+            onAction = onAction
+        )
+    }
+
+    // Add counter sheet
+    if (state.showAddCounterSheet) {
+        AddCounterSheet(
+            onDismiss = { onAction(RecordsAction.HideAddCounterSheet) },
+            onAction = onAction
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -246,7 +264,8 @@ private fun DurationTab(
         // Timer display
         item(contentType = "timer_display") {
             TimerDisplay(
-                timerState = state.timerState
+                timerState = state.timerState,
+                onAction = onAction
             )
         }
 
@@ -278,10 +297,11 @@ private fun DurationTab(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun TimerDisplay(
     timerState: TimerState,
+    onAction: (RecordsAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -373,7 +393,7 @@ private fun TimerDisplay(
             modifier = Modifier.fillMaxWidth()
         ) {
             FilledTonalIconButton(
-                onClick = { /* Reset */ },
+                onClick = { onAction(RecordsAction.ResetTimer) },
                 shapes = IconButtonDefaults.shapes()
             ) {
                 Icon(
@@ -386,9 +406,14 @@ private fun TimerDisplay(
 
             FilledIconToggleButton(
                 checked = timerState.timerRunning,
-                onCheckedChange = { /* Toggle play/pause */ },
+                onCheckedChange = { onAction(RecordsAction.ToggleTimer) },
                 shapes = IconButtonDefaults.toggleableShapes(),
-                modifier = Modifier.size(72.dp)
+                modifier = Modifier
+                    .size(72.dp)
+                    .combinedClickable(
+                        onClick = { onAction(RecordsAction.ToggleTimer) },
+                        onLongClick = { onAction(RecordsAction.StartInfiniteMode) }
+                    )
             ) {
                 Icon(
                     painterResource(
@@ -404,7 +429,7 @@ private fun TimerDisplay(
             Spacer(Modifier.width(16.dp))
 
             FilledTonalIconButton(
-                onClick = { /* Skip */ },
+                onClick = { onAction(RecordsAction.SkipTimer) },
                 shapes = IconButtonDefaults.shapes()
             ) {
                 Icon(

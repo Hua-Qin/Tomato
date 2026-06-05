@@ -32,6 +32,7 @@ import org.nsh07.pomodoro.data.CustomTimerRepository
 import org.nsh07.pomodoro.data.StateRepository
 import org.nsh07.pomodoro.data.TimerSessionRepository
 import org.nsh07.pomodoro.service.ServiceHelper
+import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerAction
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.utils.millisecondsToStr
 import java.time.LocalDate
@@ -90,7 +91,30 @@ class RecordsViewModel(
             is RecordsAction.ShowAddCounterSheet -> showAddCounterSheet()
             is RecordsAction.HideAddCounterSheet -> hideAddCounterSheet()
             is RecordsAction.SetStatsPeriod -> setStatsPeriod(action.period)
+            is RecordsAction.ToggleTimer -> toggleTimer()
+            is RecordsAction.ResetTimer -> resetTimer()
+            is RecordsAction.SkipTimer -> skipTimer()
+            is RecordsAction.StartInfiniteMode -> startInfiniteMode()
         }
+    }
+
+    private fun toggleTimer() {
+        serviceHelper.startService(TimerAction.ToggleTimer)
+    }
+
+    private fun resetTimer() {
+        serviceHelper.startService(TimerAction.ResetTimer)
+    }
+
+    private fun skipTimer() {
+        serviceHelper.startService(TimerAction.SkipTimer(fromButton = true))
+    }
+
+    private fun startInfiniteMode() {
+        stateRepository.timerState.update {
+            it.copy(infiniteFocus = true)
+        }
+        serviceHelper.startService(TimerAction.ResetTimer)
     }
 
     private fun selectTab(index: Int) {

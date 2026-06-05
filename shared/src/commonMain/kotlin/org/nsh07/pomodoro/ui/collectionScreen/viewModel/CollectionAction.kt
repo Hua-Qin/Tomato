@@ -27,4 +27,6 @@ sealed interface CollectionAction {
     data class Search(val query: String) : CollectionAction
     data object StartSearch : CollectionAction
     data object StopSearch : CollectionAction
+    data object NavigateToAddNote : CollectionAction
+    data class NavigateToEditNote(val noteId: Long) : CollectionAction
 }

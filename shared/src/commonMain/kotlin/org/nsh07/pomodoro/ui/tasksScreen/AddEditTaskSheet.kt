@@ -17,6 +17,9 @@
 
 package org.nsh07.pomodoro.ui.tasksScreen
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,6 +35,8 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
@@ -102,6 +107,13 @@ fun AddEditTaskSheet(
     var hasDueTime by remember { mutableStateOf(task?.dueTime != null) }
     var reminderEnabled by remember { mutableStateOf(task?.reminderEnabled ?: false) }
     var repeatRule by remember { mutableStateOf(task?.repeatRule ?: "none") }
+    var customRepeatDays by remember {
+        mutableStateOf(
+            task?.repeatCustomDays?.split(",")
+                ?.mapNotNull { it.trim().toIntOrNull() }
+                ?.toSet() ?: emptySet()
+        )
+    }
     var priority by remember { mutableIntStateOf(task?.priority ?: 0) }
     var category by remember { mutableStateOf(task?.category ?: "") }
 
@@ -168,7 +180,7 @@ fun AddEditTaskSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Due date
+            // Due date - always visible with switch
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -187,47 +199,43 @@ fun AddEditTaskSheet(
                 }
             }
 
-            // Due time
-            if (hasDueDate) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Switch(
-                        checked = hasDueTime,
-                        onCheckedChange = { hasDueTime = it }
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(Res.string.due_time))
-                    if (hasDueTime) {
-                        Spacer(Modifier.weight(1f))
-                        TextButton(onClick = { showTimePicker = true }) {
-                            Text(
-                                String.format(
-                                    java.util.Locale.getDefault(),
-                                    "%02d:%02d",
-                                    dueTime / 60,
-                                    dueTime % 60
-                                )
+            // Due time - always visible with switch
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Switch(
+                    checked = hasDueTime,
+                    onCheckedChange = { hasDueTime = it }
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(Res.string.due_time))
+                if (hasDueTime) {
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = { showTimePicker = true }) {
+                        Text(
+                            String.format(
+                                java.util.Locale.getDefault(),
+                                "%02d:%02d",
+                                dueTime / 60,
+                                dueTime % 60
                             )
-                        }
+                        )
                     }
                 }
             }
 
-            // Reminder
-            if (hasDueDate && hasDueTime) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Switch(
-                        checked = reminderEnabled,
-                        onCheckedChange = { reminderEnabled = it }
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(Res.string.reminder))
-                }
+            // Reminder - always visible with switch
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Switch(
+                    checked = reminderEnabled,
+                    onCheckedChange = { reminderEnabled = it }
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(Res.string.reminder))
             }
 
             // Repeat rule
@@ -244,6 +252,44 @@ fun AddEditTaskSheet(
                         onClick = { repeatRule = rule },
                         label = { Text(repeatLabels[index], style = typography.labelSmall) }
                     )
+                }
+            }
+
+            // Custom repeat days selector
+            AnimatedVisibility(
+                visible = repeatRule == "custom",
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                val dayNames = remember {
+                    val cal = java.util.Calendar.getInstance()
+                    val names = mutableListOf<String>()
+                    val sdf = java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault())
+                    cal.set(java.util.Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
+                    repeat(7) {
+                        names.add(sdf.format(cal.time))
+                        cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+                    }
+                    names.toList()
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                ) {
+                    dayNames.forEachIndexed { index, dayName ->
+                        FilterChip(
+                            selected = customRepeatDays.contains(index),
+                            onClick = {
+                                customRepeatDays = if (customRepeatDays.contains(index)) {
+                                    customRepeatDays - index
+                                } else {
+                                    customRepeatDays + index
+                                }
+                            },
+                            label = { Text(dayName.take(2), style = typography.labelSmall) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
 
@@ -290,6 +336,7 @@ fun AddEditTaskSheet(
                             dueTime = if (hasDueTime) dueTime else null,
                             reminderEnabled = reminderEnabled,
                             repeatRule = repeatRule,
+                            repeatCustomDays = customRepeatDays.joinToString(","),
                             priority = priority,
                             category = category,
                             createdAt = task?.createdAt ?: now,
