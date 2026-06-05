@@ -68,6 +68,7 @@ import tomato.shared.generated.resources.Res
 import tomato.shared.generated.resources.add_task
 import tomato.shared.generated.resources.alarm
 import tomato.shared.generated.resources.check
+import tomato.shared.generated.resources.clear
 import tomato.shared.generated.resources.completed_tasks
 import tomato.shared.generated.resources.flag
 import tomato.shared.generated.resources.no_tasks
