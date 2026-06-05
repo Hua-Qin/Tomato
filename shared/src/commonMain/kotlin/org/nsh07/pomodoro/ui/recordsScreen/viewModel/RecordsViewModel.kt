@@ -32,7 +32,7 @@ import org.nsh07.pomodoro.data.CustomTimerRepository
 import org.nsh07.pomodoro.data.StateRepository
 import org.nsh07.pomodoro.data.TimerSessionRepository
 import org.nsh07.pomodoro.service.ServiceHelper
-import org.nsh07.pomodoro.ui.timerScreen.viewmodel.TimerMode
+import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.utils.millisecondsToStr
 import java.time.LocalDate
 

@@ -52,7 +52,7 @@ class AppCounterRecordRepository(
 
     override fun getAllCounters(): Flow<List<CounterRecord>> = counterRecordDao.getAllCounters()
 
-    override suspend fun incrementCounter(counterId: Long, date: LocalDate) =
+    override suspend fun incrementCounter(counterId: Long, date: LocalDate): Unit =
         withContext(ioDispatcher) {
             val existing = counterRecordDao.getEntryByCounterAndDateSync(counterId, date)
             if (existing != null) {
@@ -64,7 +64,7 @@ class AppCounterRecordRepository(
             }
         }
 
-    override suspend fun decrementCounter(counterId: Long, date: LocalDate) =
+    override suspend fun decrementCounter(counterId: Long, date: LocalDate): Unit =
         withContext(ioDispatcher) {
             val existing = counterRecordDao.getEntryByCounterAndDateSync(counterId, date)
             if (existing != null && existing.count > 0) {

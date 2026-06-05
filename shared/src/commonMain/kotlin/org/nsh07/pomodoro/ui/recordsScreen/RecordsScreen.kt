@@ -68,8 +68,8 @@ import org.nsh07.pomodoro.data.TimerSession
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsAction
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsState
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.StatsPeriod
-import org.nsh07.pomodoro.ui.timerScreen.viewmodel.TimerMode
-import org.nsh07.pomodoro.ui.timerScreen.viewmodel.TimerState
+import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
+import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerState
 import tomato.shared.generated.resources.Res
 import tomato.shared.generated.resources.add
 import tomato.shared.generated.resources.pause
@@ -134,6 +134,7 @@ fun RecordsScreen(
                     state = state,
                     onAction = onAction
                 )
+                else -> {}
             }
         }
     }
@@ -228,6 +229,7 @@ private fun DurationTab(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun TimerDisplay(
     timerState: TimerState,
@@ -401,6 +403,7 @@ private fun SessionItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CounterTab(
     state: RecordsState,
@@ -464,6 +467,7 @@ private fun CounterTab(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CounterCard(
     counter: CounterRecord,
