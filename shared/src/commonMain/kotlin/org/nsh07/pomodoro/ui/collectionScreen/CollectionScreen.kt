@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.DropdownMenu
@@ -146,24 +147,31 @@ fun CollectionScreen(
                     placeholder = {
                         Text(stringResource(Res.string.search_notes))
                     },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(Res.drawable.search),
+                            contentDescription = null
+                        )
+                    },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = colorScheme.surfaceContainerLow,
-                        unfocusedContainerColor = colorScheme.surfaceContainerLow
+                        focusedContainerColor = colorScheme.surfaceContainerHigh,
+                        unfocusedContainerColor = colorScheme.surfaceContainerHigh
                     ),
-                    shape = shapes.extraSmall
+                    shape = shapes.large
                 )
             }
 
             // Notes list
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(
                     items = collectionState.notes,
-                    key = { it.id }
+                    key = { it.id },
+                    itemContentType = { "note" }
                 ) { note ->
                     NoteCard(
                         note = note,
@@ -184,8 +192,8 @@ fun CollectionScreen(
                                 Icon(
                                     painterResource(Res.drawable.folder),
                                     contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = colorScheme.outlineVariant
+                                    modifier = Modifier.size(80.dp),
+                                    tint = colorScheme.outlineVariant.copy(alpha = 0.6f)
                                 )
                                 Spacer(Modifier.height(16.dp))
                                 Text(
@@ -246,7 +254,8 @@ private fun NoteCard(
 
     Surface(
         shape = shapes.medium,
-        color = colorScheme.surfaceBright,
+        color = if (note.isPinned) colorScheme.primaryContainer else colorScheme.surfaceBright,
+        tonalElevation = 1.dp,
         modifier = modifier
             .fillMaxWidth()
             .combinedClickable(
@@ -255,7 +264,7 @@ private fun NoteCard(
             )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -282,12 +291,18 @@ private fun NoteCard(
                     }
                 }
                 if (note.isPinned) {
-                    Icon(
-                        painterResource(Res.drawable.push_pin),
-                        contentDescription = stringResource(Res.string.pin_note),
-                        modifier = Modifier.size(16.dp),
-                        tint = colorScheme.primary
-                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = colorScheme.primaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            painterResource(Res.drawable.push_pin),
+                            contentDescription = stringResource(Res.string.pin_note),
+                            modifier = Modifier.size(12.dp),
+                            tint = colorScheme.primary
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(4.dp))

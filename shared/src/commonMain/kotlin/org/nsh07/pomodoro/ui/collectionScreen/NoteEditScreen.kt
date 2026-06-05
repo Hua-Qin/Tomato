@@ -17,6 +17,7 @@
 
 package org.nsh07.pomodoro.ui.collectionScreen
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -67,6 +68,7 @@ import tomato.shared.generated.resources.arrow_back
 import tomato.shared.generated.resources.back
 import tomato.shared.generated.resources.note_title
 import tomato.shared.generated.resources.preview
+import tomato.shared.generated.resources.start_writing
 import tomato.shared.generated.resources.visibility
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -184,7 +186,7 @@ fun NoteEditScreen(
                     value = content,
                     onValueChange = { content = it },
                     placeholder = {
-                        Text("Start writing...")
+                        Text(stringResource(Res.string.start_writing))
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -234,14 +236,21 @@ private fun FormatButton(
     style: SpanStyle = SpanStyle(),
     onClick: () -> Unit
 ) {
-    TextButton(onClick = onClick) {
-        Text(
-            text = buildAnnotatedString {
-                withStyle(style) { append(label) }
-            },
-            style = typography.titleSmall,
-            color = colorScheme.onSurfaceVariant
-        )
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = Color.Transparent,
+        modifier = Modifier.size(48.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(style) { append(label) }
+                },
+                style = typography.titleSmall,
+                color = colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

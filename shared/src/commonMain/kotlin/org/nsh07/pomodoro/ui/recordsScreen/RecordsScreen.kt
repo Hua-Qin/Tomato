@@ -17,7 +17,11 @@
 
 package org.nsh07.pomodoro.ui.recordsScreen
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,16 +36,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeExtendedFloatingActionButton
@@ -49,6 +58,9 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -73,6 +85,7 @@ import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerState
 import tomato.shared.generated.resources.Res
 import tomato.shared.generated.resources.add
 import tomato.shared.generated.resources.add_counter
+import tomato.shared.generated.resources.check
 import tomato.shared.generated.resources.completed
 import tomato.shared.generated.resources.counter_record
 import tomato.shared.generated.resources.duration_record
@@ -80,6 +93,8 @@ import tomato.shared.generated.resources.focus
 import tomato.shared.generated.resources.focus_breakdown
 import tomato.shared.generated.resources.focus_breakdown_desc
 import tomato.shared.generated.resources.long_break
+import tomato.shared.generated.resources.no_counters
+import tomato.shared.generated.resources.no_records
 import tomato.shared.generated.resources.pause
 import tomato.shared.generated.resources.pause_large
 import tomato.shared.generated.resources.play
@@ -170,55 +185,73 @@ private fun DurationTab(
         modifier = modifier.fillMaxSize()
     ) {
         // Timer type chips
-        item {
-            Row(
+        item(contentType = "timer_chips") {
+            LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
                 // Default timer chip
-                val defaultSelected = state.activeTimerId == null
-                FilledTonalButton(
-                    onClick = { /* Select default timer */ },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        state.timerState.activeTimerName,
-                        fontWeight = if (defaultSelected) FontWeight.Bold else FontWeight.Normal
+                item(contentType = "timer_chip") {
+                    val defaultSelected = state.activeTimerId == null
+                    FilterChip(
+                        selected = defaultSelected,
+                        onClick = { /* Select default timer */ },
+                        label = { Text(state.timerState.activeTimerName) },
+                        leadingIcon = if (defaultSelected) {
+                            {
+                                Icon(
+                                    painterResource(Res.drawable.check),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }
+                        } else null
                     )
                 }
-                state.customTimers.forEach { timer ->
+
+                items(state.customTimers, key = { it.id }, contentType = { "timer_chip" }) { timer ->
                     val selected = state.activeTimerId == timer.id
-                    FilledTonalButton(
+                    FilterChip(
+                        selected = selected,
                         onClick = { onAction(RecordsAction.SelectTimer(timer.id)) },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            timer.name,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-                        )
-                    }
+                        label = { Text(timer.name) },
+                        leadingIcon = if (selected) {
+                            {
+                                Icon(
+                                    painterResource(Res.drawable.check),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }
+                        } else null
+                    )
                 }
-                FilledTonalButton(
-                    onClick = { onAction(RecordsAction.ShowAddTimerSheet) }
-                ) {
-                    Icon(
-                        painterResource(Res.drawable.add),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+
+                item(contentType = "add_timer_chip") {
+                    FilterChip(
+                        selected = false,
+                        onClick = { onAction(RecordsAction.ShowAddTimerSheet) },
+                        label = {
+                            Icon(
+                                painterResource(Res.drawable.add),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     )
                 }
             }
         }
 
         // Timer display
-        item {
+        item(contentType = "timer_display") {
             TimerDisplay(
                 timerState = state.timerState
             )
         }
 
         // Today's sessions
-        item {
+        item(contentType = "session_header") {
             Text(
                 stringResource(Res.string.today),
                 style = typography.titleMedium,
@@ -229,16 +262,16 @@ private fun DurationTab(
         }
 
         if (state.todaySessions.isEmpty()) {
-            item {
+            item(contentType = "session") {
                 Text(
-                    "暂无记录",
+                    stringResource(Res.string.no_records),
                     style = typography.bodyMedium,
                     color = colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
             }
         } else {
-            items(state.todaySessions, key = { it.id }) { session ->
+            items(state.todaySessions, key = { it.id }, contentType = { "session" }) { session ->
                 SessionItem(session)
             }
         }
@@ -351,10 +384,11 @@ private fun TimerDisplay(
 
             Spacer(Modifier.width(16.dp))
 
-            FilledIconButton(
-                onClick = { /* Toggle play/pause */ },
-                shape = CircleShape,
-                modifier = Modifier.size(64.dp)
+            FilledIconToggleButton(
+                checked = timerState.timerRunning,
+                onCheckedChange = { /* Toggle play/pause */ },
+                shapes = IconButtonDefaults.toggleableShapes(),
+                modifier = Modifier.size(72.dp)
             ) {
                 Icon(
                     painterResource(
@@ -363,7 +397,7 @@ private fun TimerDisplay(
                     ),
                     contentDescription = if (timerState.timerRunning) stringResource(Res.string.pause)
                     else stringResource(Res.string.play),
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(36.dp)
                 )
             }
 
@@ -436,7 +470,7 @@ private fun CounterTab(
                     .padding(32.dp)
             ) {
                 Text(
-                    "暂无计数器",
+                    stringResource(Res.string.no_counters),
                     style = typography.bodyLarge,
                     color = colorScheme.onSurfaceVariant
                 )
@@ -446,14 +480,16 @@ private fun CounterTab(
                 }
             }
         } else {
-            LazyColumn(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(16.dp),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = 80.dp)
             ) {
-                items(state.counters, key = { it.id }) { counter ->
+                items(state.counters, key = { it.id }, contentType = { "counter" }) { counter ->
                     CounterCard(
                         counter = counter,
                         count = state.counterCounts[counter.id] ?: 0,
@@ -498,22 +534,36 @@ private fun CounterCard(
         color = colorScheme.surfaceBright,
         modifier = modifier.fillMaxWidth()
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = counter.title,
+                style = typography.titleMedium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+
+            AnimatedContent(
+                targetState = count,
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        slideInVertically { -it } togetherWith slideOutVertically { it }
+                    } else {
+                        slideInVertically { it } togetherWith slideOutVertically { -it }
+                    }
+                },
+                label = "counterAnimation"
+            ) { targetCount ->
                 Text(
-                    text = counter.title,
-                    style = typography.titleMedium
-                )
-                Text(
-                    text = stringResource(Res.string.today_count, count),
-                    style = typography.bodySmall,
-                    color = colorScheme.onSurfaceVariant
+                    text = "$targetCount",
+                    style = typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 )
             }
 
@@ -528,14 +578,6 @@ private fun CounterCard(
                 ) {
                     Text("-", style = typography.titleLarge)
                 }
-
-                Text(
-                    text = "$count",
-                    style = typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.width(48.dp)
-                )
 
                 FilledTonalIconButton(
                     onClick = onIncrement,
@@ -562,34 +604,25 @@ private fun StatisticsTab(
         modifier = modifier.fillMaxSize()
     ) {
         // Period toggle
-        item {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                FilledTonalButton(
+        item(contentType = "period_selector") {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                SegmentedButton(
+                    shape = SegmentedButtonDefaults.itemShape(0, 2),
+                    selected = state.statsPeriod == StatsPeriod.WEEK,
                     onClick = { onAction(RecordsAction.SetStatsPeriod(StatsPeriod.WEEK)) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        stringResource(Res.string.this_week),
-                        fontWeight = if (state.statsPeriod == StatsPeriod.WEEK) FontWeight.Bold else FontWeight.Normal
-                    )
-                }
-                FilledTonalButton(
+                    label = { Text(stringResource(Res.string.this_week)) }
+                )
+                SegmentedButton(
+                    shape = SegmentedButtonDefaults.itemShape(1, 2),
+                    selected = state.statsPeriod == StatsPeriod.MONTH,
                     onClick = { onAction(RecordsAction.SetStatsPeriod(StatsPeriod.MONTH)) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        stringResource(Res.string.this_month),
-                        fontWeight = if (state.statsPeriod == StatsPeriod.MONTH) FontWeight.Bold else FontWeight.Normal
-                    )
-                }
+                    label = { Text(stringResource(Res.string.this_month)) }
+                )
             }
         }
 
         // Duration breakdown placeholder
-        item {
+        item(contentType = "breakdown") {
             Surface(
                 shape = shapes.large,
                 color = colorScheme.surfaceBright,
@@ -613,7 +646,7 @@ private fun StatisticsTab(
         }
 
         // Summary cards
-        item {
+        item(contentType = "summary") {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -642,6 +675,7 @@ private fun SummaryCard(
     Surface(
         shape = shapes.large,
         color = colorScheme.surfaceBright,
+        tonalElevation = 1.dp,
         modifier = modifier
     ) {
         Column(

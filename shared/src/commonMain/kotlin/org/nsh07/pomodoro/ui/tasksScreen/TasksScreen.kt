@@ -17,7 +17,13 @@
 
 package org.nsh07.pomodoro.ui.tasksScreen
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +33,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,11 +42,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeExtendedFloatingActionButton
@@ -51,12 +57,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -70,13 +81,16 @@ import tomato.shared.generated.resources.alarm
 import tomato.shared.generated.resources.check
 import tomato.shared.generated.resources.clear
 import tomato.shared.generated.resources.completed_tasks
+import tomato.shared.generated.resources.delete
 import tomato.shared.generated.resources.flag
 import tomato.shared.generated.resources.no_tasks
+import tomato.shared.generated.resources.no_tasks_hint
 import tomato.shared.generated.resources.pending_tasks
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -142,13 +156,17 @@ fun TasksScreen(
                         color = if (isSelected) colorScheme.primary
                         else if (isToday) colorScheme.primaryContainer
                         else colorScheme.surface,
-                        modifier = Modifier.clickable {
-                            onAction(TasksAction.SelectDate(dayMillis))
-                        }
+                        tonalElevation = if (isSelected) 2.dp else 0.dp,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clickable {
+                                onAction(TasksAction.SelectDate(dayMillis))
+                            }
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = weekdayFormatter.format(Date(dayMillis)),
@@ -162,6 +180,13 @@ fun TasksScreen(
                                 color = if (isSelected) colorScheme.onPrimary
                                 else colorScheme.onSurface
                             )
+                            if (isToday && !isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(3.dp)
+                                        .background(colorScheme.primary, CircleShape)
+                                )
+                            }
                         }
                     }
                 }
@@ -187,13 +212,18 @@ fun TasksScreen(
                     }
                     items(
                         items = tasksState.pendingTasks,
-                        key = { it.id }
+                        key = { it.id },
+                        itemContentType = { "pending_task" }
                     ) { task ->
-                        TaskItem(
+                        SwipeableTaskItem(
                             task = task,
                             onCheck = { onAction(TasksAction.CompleteTask(task.id)) },
                             onClick = { onAction(TasksAction.EditTask(task)) },
                             onDelete = { onAction(TasksAction.DeleteTask(task.id)) }
+                        )
+                        HorizontalDivider(
+                            color = colorScheme.outlineVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
                 }
@@ -210,13 +240,18 @@ fun TasksScreen(
                     }
                     items(
                         items = tasksState.completedTasks,
-                        key = { it.id }
+                        key = { it.id },
+                        itemContentType = { "completed_task" }
                     ) { task ->
-                        TaskItem(
+                        SwipeableTaskItem(
                             task = task,
                             onCheck = { onAction(TasksAction.UncompleteTask(task.id)) },
                             onClick = { onAction(TasksAction.EditTask(task)) },
                             onDelete = { onAction(TasksAction.DeleteTask(task.id)) }
+                        )
+                        HorizontalDivider(
+                            color = colorScheme.outlineVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
                 }
@@ -234,13 +269,18 @@ fun TasksScreen(
                                 Icon(
                                     painter = painterResource(Res.drawable.check),
                                     contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = colorScheme.outlineVariant
+                                    modifier = Modifier.size(80.dp),
+                                    tint = colorScheme.outlineVariant.copy(alpha = 0.6f)
                                 )
                                 Spacer(Modifier.height(16.dp))
                                 Text(
                                     text = stringResource(Res.string.no_tasks),
                                     style = typography.bodyLarge,
+                                    color = colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = stringResource(Res.string.no_tasks_hint),
+                                    style = typography.bodyMedium,
                                     color = colorScheme.onSurfaceVariant
                                 )
                             }
@@ -291,6 +331,88 @@ fun TasksScreen(
 }
 
 @Composable
+private fun SwipeableTaskItem(
+    task: Task,
+    onCheck: () -> Unit,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val offsetX = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    val swipeThreshold = 150f
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+    ) {
+        // Background swipe indicators
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .matchParentSize()
+                .background(
+                    color = if (offsetX.value < -swipeThreshold) colorScheme.error
+                    else if (offsetX.value > swipeThreshold) colorScheme.primary
+                    else Color.Transparent,
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = if (offsetX.value < 0) Arrangement.Start else Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (offsetX.value < -swipeThreshold) {
+                Icon(
+                    painter = painterResource(Res.drawable.delete),
+                    contentDescription = null,
+                    tint = colorScheme.onError
+                )
+            } else if (offsetX.value > swipeThreshold) {
+                Icon(
+                    painter = painterResource(Res.drawable.check),
+                    contentDescription = null,
+                    tint = colorScheme.onPrimary
+                )
+            }
+        }
+
+        // Foreground task item
+        TaskItem(
+            task = task,
+            onCheck = onCheck,
+            onClick = onClick,
+            onDelete = onDelete,
+            modifier = Modifier
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            val currentOffset = offsetX.value
+                            scope.launch {
+                                if (currentOffset < -swipeThreshold) {
+                                    onDelete()
+                                } else if (currentOffset > swipeThreshold) {
+                                    onCheck()
+                                }
+                                offsetX.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = spring(stiffness = Spring.StiffnessMedium)
+                                )
+                            }
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            scope.launch {
+                                offsetX.snapTo((offsetX.value + dragAmount).coerceIn(-300f, 300f))
+                            }
+                        }
+                    )
+                }
+        )
+    }
+}
+
+@Composable
 private fun TaskItem(
     task: Task,
     onCheck: () -> Unit,
@@ -309,14 +431,26 @@ private fun TaskItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            Checkbox(
-                checked = task.isCompleted,
-                onCheckedChange = { onCheck() },
-                colors = CheckboxDefaults.colors(
-                    checkedColor = colorScheme.primary,
-                    uncheckedColor = colorScheme.onSurfaceVariant
-                )
-            )
+            // Circular check box
+            Surface(
+                shape = CircleShape,
+                color = if (task.isCompleted) colorScheme.primary else Color.Transparent,
+                border = if (!task.isCompleted) androidx.compose.foundation.BorderStroke(2.dp, colorScheme.outline) else null,
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable(onClick = onCheck)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    AnimatedVisibility(visible = task.isCompleted) {
+                        Icon(
+                            painter = painterResource(Res.drawable.check),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = colorScheme.onPrimary
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(

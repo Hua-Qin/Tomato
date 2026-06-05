@@ -33,6 +33,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -134,7 +135,7 @@ fun AddEditTaskSheet(
         modifier = modifier
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
@@ -153,6 +154,7 @@ fun AddEditTaskSheet(
                 onValueChange = { title = it },
                 label = { Text(stringResource(Res.string.task_title)) },
                 singleLine = true,
+                shape = shapes.large,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -162,6 +164,7 @@ fun AddEditTaskSheet(
                 onValueChange = { description = it },
                 label = { Text(stringResource(Res.string.task_description)) },
                 maxLines = 3,
+                shape = shapes.large,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -267,6 +270,7 @@ fun AddEditTaskSheet(
                 onValueChange = { category = it },
                 label = { Text(stringResource(Res.string.category)) },
                 singleLine = true,
+                shape = shapes.large,
                 modifier = Modifier.fillMaxWidth()
             )
 

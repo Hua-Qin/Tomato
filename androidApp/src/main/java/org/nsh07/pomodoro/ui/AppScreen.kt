@@ -22,6 +22,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -275,7 +278,7 @@ fun AppScreen(
                                     modifier = Modifier.height(56.dp)
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Crossfade(selected) {
+                                        Crossfade(selected, animationSpec = tween(durationMillis = 300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) {
                                             if (it) Icon(
                                                 painterResource(item.selectedIcon),
                                                 stringResource(item.label)
@@ -287,8 +290,8 @@ fun AppScreen(
                                         }
                                         AnimatedVisibility(
                                             visible = selected || wide,
-                                            enter = expandHorizontally(motionScheme.defaultSpatialSpec()),
-                                            exit = shrinkHorizontally(motionScheme.defaultSpatialSpec())
+                                            enter = expandHorizontally(spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)),
+                                            exit = shrinkHorizontally(spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium))
                                         ) {
                                             Text(
                                                 text = stringResource(item.label),

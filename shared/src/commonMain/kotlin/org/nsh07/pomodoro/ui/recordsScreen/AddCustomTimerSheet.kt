@@ -57,8 +57,10 @@ import tomato.shared.generated.resources.Res
 import tomato.shared.generated.resources.add_custom_timer
 import tomato.shared.generated.resources.alarm
 import tomato.shared.generated.resources.cancel
+import tomato.shared.generated.resources.default_timer_name
 import tomato.shared.generated.resources.focus
 import tomato.shared.generated.resources.long_break
+import tomato.shared.generated.resources.minutes_suffix
 import tomato.shared.generated.resources.session_length
 import tomato.shared.generated.resources.short_break
 import tomato.shared.generated.resources.timer_name
@@ -81,6 +83,8 @@ fun AddCustomTimerSheet(
     var sessionLength by remember { mutableStateOf("4") }
     var alarmEnabled by remember { mutableStateOf(true) }
     var vibrateEnabled by remember { mutableStateOf(true) }
+
+    val defaultTimerName = stringResource(Res.string.default_timer_name)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -117,7 +121,7 @@ fun AddCustomTimerSheet(
                     value = focusMinutes,
                     onValueChange = { focusMinutes = it },
                     label = { Text(stringResource(Res.string.focus)) },
-                    suffix = { Text("min") },
+                    suffix = { Text(stringResource(Res.string.minutes_suffix)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = shapes.large,
@@ -127,7 +131,7 @@ fun AddCustomTimerSheet(
                     value = shortBreakMinutes,
                     onValueChange = { shortBreakMinutes = it },
                     label = { Text(stringResource(Res.string.short_break)) },
-                    suffix = { Text("min") },
+                    suffix = { Text(stringResource(Res.string.minutes_suffix)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = shapes.large,
@@ -143,7 +147,7 @@ fun AddCustomTimerSheet(
                     value = longBreakMinutes,
                     onValueChange = { longBreakMinutes = it },
                     label = { Text(stringResource(Res.string.long_break)) },
-                    suffix = { Text("min") },
+                    suffix = { Text(stringResource(Res.string.minutes_suffix)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = shapes.large,
@@ -211,7 +215,7 @@ fun AddCustomTimerSheet(
                         onAction(
                             RecordsAction.AddCustomTimer(
                                 CustomTimer(
-                                    name = name.ifBlank { "专注" },
+                                    name = name.ifBlank { defaultTimerName },
                                     focusDuration = focusMs,
                                     shortBreakDuration = shortMs,
                                     longBreakDuration = longMs,
