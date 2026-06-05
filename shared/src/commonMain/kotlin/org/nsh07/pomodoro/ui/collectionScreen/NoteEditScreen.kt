@@ -32,9 +32,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
@@ -67,7 +69,6 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.nsh07.pomodoro.data.Note
 import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionAction
 import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionViewModel
-import org.nsh07.pomodoro.ui.theme.CustomColors
 import tomato.shared.generated.resources.Res
 import tomato.shared.generated.resources.arrow_back
 import tomato.shared.generated.resources.back
@@ -87,7 +88,6 @@ fun NoteEditScreen(
     viewModel: CollectionViewModel = koinViewModel()
 ) {
     val collectionState by viewModel.state.collectAsStateWithLifecycle()
-    val detailTopBarColors = CustomColors.detailPaneTopBarColors
 
     // Find the note if editing
     val existingNote = noteId?.let { id ->
@@ -145,14 +145,18 @@ fun NoteEditScreen(
                 }
             },
             actions = {
-                IconButton(onClick = { isPreview = !isPreview }) {
+                FilledTonalIconButton(
+                    onClick = { isPreview = !isPreview },
+                    colors = if (isPreview) IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = colorScheme.primaryContainer
+                    ) else IconButtonDefaults.filledTonalIconButtonColors()
+                ) {
                     Icon(
                         painterResource(Res.drawable.visibility),
                         contentDescription = stringResource(Res.string.preview)
                     )
                 }
-            },
-            colors = detailTopBarColors
+            }
         )
 
         if (isPreview) {

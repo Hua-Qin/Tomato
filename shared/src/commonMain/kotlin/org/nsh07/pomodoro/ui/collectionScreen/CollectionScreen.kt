@@ -68,7 +68,6 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.nsh07.pomodoro.data.Note
 import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionAction
 import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionViewModel
-import org.nsh07.pomodoro.ui.theme.CustomColors
 import tomato.shared.generated.resources.Res
 import tomato.shared.generated.resources.add
 import tomato.shared.generated.resources.add_note
@@ -97,7 +96,6 @@ fun CollectionScreen(
     viewModel: CollectionViewModel = koinViewModel()
 ) {
     val collectionState by viewModel.state.collectAsStateWithLifecycle()
-    val topBarColors = CustomColors.topBarColors
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -128,8 +126,7 @@ fun CollectionScreen(
                             )
                         }
                     }
-                },
-                colors = topBarColors
+                }
             )
 
             // Search bar

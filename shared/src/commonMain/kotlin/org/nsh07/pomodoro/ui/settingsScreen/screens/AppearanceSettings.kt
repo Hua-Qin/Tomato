@@ -21,8 +21,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -36,7 +38,9 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedListItem
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -72,6 +76,7 @@ import tomato.shared.generated.resources.arrow_back
 import tomato.shared.generated.resources.back
 import tomato.shared.generated.resources.black_theme
 import tomato.shared.generated.resources.black_theme_desc
+import tomato.shared.generated.resources.button_size
 import tomato.shared.generated.resources.check
 import tomato.shared.generated.resources.clear
 import tomato.shared.generated.resources.contrast
@@ -213,6 +218,37 @@ fun AppearanceSettings(
                         colors = listItemColors,
                         enabled = isPlus,
                         shapes = segmentedListItemShapes(2, 3)
+                    )
+                }
+
+                item {
+                    SegmentedListItem(
+                        onClick = { /* no-op, slider handles it */ },
+                        leadingContent = {
+                            Icon(painterResource(Res.drawable.contrast), contentDescription = null)
+                        },
+                        content = { Text(stringResource(Res.string.button_size)) },
+                        supportingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Slider(
+                                    value = settingsState.buttonSizeScale,
+                                    onValueChange = { onAction(SettingsAction.SaveButtonSizeScale(it)) },
+                                    valueRange = 0.7f..1.3f,
+                                    steps = 5,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = "${(settingsState.buttonSizeScale * 100).toInt()}%",
+                                    style = typography.labelMedium,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                        },
+                        colors = listItemColors,
+                        shapes = segmentedListItemShapes(3, 3)
                     )
                 }
 

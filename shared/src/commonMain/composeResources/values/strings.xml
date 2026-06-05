@@ -30,6 +30,7 @@
     <string name="back">Back</string>
     <string name="black_theme">Black theme</string>
     <string name="black_theme_desc">Use a pure black dark theme</string>
+    <string name="button_size">Button Size</string>
     <string name="bmc">BuyMeACoffee</string>
     <string name="bmc_desc">Support me with a small donation</string>
     <string name="break_">Break</string>

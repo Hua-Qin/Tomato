@@ -23,6 +23,7 @@ sealed interface SettingsAction {
     data class SaveAlarmEnabled(val enabled: Boolean) : SettingsAction
     data class SaveVibrateEnabled(val enabled: Boolean) : SettingsAction
     data class SaveBlackTheme(val enabled: Boolean) : SettingsAction
+    data class SaveButtonSizeScale(val scale: Float) : SettingsAction
     data class SaveAodEnabled(val enabled: Boolean) : SettingsAction
     data class SaveDndEnabled(val enabled: Boolean) : SettingsAction
     data class SaveMediaVolumeForAlarm(val enabled: Boolean) : SettingsAction

@@ -41,6 +41,7 @@
     <string name="alarm_sound">铃声</string>
     <string name="black_theme">黑色主题</string>
     <string name="black_theme_desc">使用纯黑主题</string>
+    <string name="button_size">按钮大小</string>
     <string name="alarm_desc">计时结束时响铃</string>
     <string name="vibrate">振动</string>
     <string name="vibrate_desc">计时结束时振动提醒</string>

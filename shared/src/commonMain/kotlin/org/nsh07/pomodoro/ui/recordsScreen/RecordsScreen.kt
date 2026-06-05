@@ -53,9 +53,9 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LargeExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
@@ -63,17 +63,23 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -404,26 +410,52 @@ private fun TimerDisplay(
 
             Spacer(Modifier.width(16.dp))
 
+            var isInfiniteLongPressed by remember { mutableStateOf(false) }
+            val infiniteButtonColor by animateColorAsState(
+                if (isInfiniteLongPressed) colorScheme.tertiaryContainer else colorScheme.primary,
+                label = "infiniteButtonColor"
+            )
+
             FilledIconToggleButton(
                 checked = timerState.timerRunning,
                 onCheckedChange = { onAction(RecordsAction.ToggleTimer) },
                 shapes = IconButtonDefaults.toggleableShapes(),
+                colors = IconButtonDefaults.filledIconToggleButtonColors(
+                    containerColor = infiniteButtonColor,
+                    checkedContainerColor = colorScheme.primary
+                ),
                 modifier = Modifier
                     .size(72.dp)
                     .combinedClickable(
                         onClick = { onAction(RecordsAction.ToggleTimer) },
-                        onLongClick = { onAction(RecordsAction.StartInfiniteMode) }
+                        onLongClick = {
+                            isInfiniteLongPressed = true
+                            onAction(RecordsAction.StartInfiniteMode)
+                        }
                     )
             ) {
-                Icon(
-                    painterResource(
-                        if (timerState.timerRunning) Res.drawable.pause_large
-                        else Res.drawable.play_large
-                    ),
-                    contentDescription = if (timerState.timerRunning) stringResource(Res.string.pause)
-                    else stringResource(Res.string.play),
-                    modifier = Modifier.size(36.dp)
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painterResource(
+                            if (timerState.timerRunning) Res.drawable.pause_large
+                            else Res.drawable.play_large
+                        ),
+                        contentDescription = if (timerState.timerRunning) stringResource(Res.string.pause)
+                        else stringResource(Res.string.play),
+                        modifier = Modifier.size(36.dp)
+                    )
+                    if (isInfiniteLongPressed) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(72.dp),
+                            color = colorScheme.tertiary,
+                            strokeWidth = 3.dp
+                        )
+                        LaunchedEffect(isInfiniteLongPressed) {
+                            delay(1500)
+                            isInfiniteLongPressed = false
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.width(16.dp))
@@ -527,18 +559,22 @@ private fun CounterTab(
         }
 
         if (state.counters.isNotEmpty()) {
-            LargeExtendedFloatingActionButton(
+            SmallFloatingActionButton(
                 onClick = { onAction(RecordsAction.ShowAddCounterSheet) },
+                containerColor = colorScheme.primaryContainer,
+                contentColor = colorScheme.onPrimaryContainer,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(16.dp)
+                    .padding(
+                        end = 16.dp,
+                        bottom = contentPadding.calculateBottomPadding() + ScreenOffset
+                    )
             ) {
                 Icon(
                     painterResource(Res.drawable.add),
-                    contentDescription = null,
+                    contentDescription = stringResource(Res.string.add_counter),
                     modifier = Modifier.size(24.dp)
                 )
-                Text(stringResource(Res.string.add_counter))
             }
         }
     }

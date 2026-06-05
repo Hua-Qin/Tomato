@@ -26,6 +26,7 @@ data class SettingsState(
     val theme: String = "auto",
     val colorScheme: String = Color.White.toString(),
     val blackTheme: Boolean = false,
+    val buttonSizeScale: Float = 1.0f,
     val aodEnabled: Boolean = false,
     val alarmEnabled: Boolean = true,
     val vibrateEnabled: Boolean = true,

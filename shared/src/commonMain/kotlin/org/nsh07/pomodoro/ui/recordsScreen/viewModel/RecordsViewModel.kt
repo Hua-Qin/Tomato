@@ -115,6 +115,8 @@ class RecordsViewModel(
             it.copy(infiniteFocus = true)
         }
         serviceHelper.startService(TimerAction.ResetTimer)
+        // Auto-start the timer after reset
+        serviceHelper.startService(TimerAction.ToggleTimer)
     }
 
     private fun selectTab(index: Int) {

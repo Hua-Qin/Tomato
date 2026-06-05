@@ -93,6 +93,11 @@ class StateRepository(private val preferenceRepository: PreferenceRepository) {
             ?: preferenceRepository.saveStringPreference("color_scheme", defaults.colorScheme)
         val blackTheme = preferenceRepository.getBooleanPreference("black_theme")
             ?: preferenceRepository.saveBooleanPreference("black_theme", defaults.blackTheme)
+        val buttonSizeScale = preferenceRepository.getStringPreference("button_size_scale")
+            ?.toFloatOrNull()
+            ?: defaults.buttonSizeScale.also {
+                preferenceRepository.saveStringPreference("button_size_scale", it.toString())
+            }
         val aodEnabled = preferenceRepository.getBooleanPreference("aod_enabled")
             ?: preferenceRepository.saveBooleanPreference("aod_enabled", defaults.aodEnabled)
         val alarmEnabled = preferenceRepository.getBooleanPreference("alarm_enabled")
@@ -156,6 +161,7 @@ class StateRepository(private val preferenceRepository: PreferenceRepository) {
                 colorScheme = colorSchemeStr,
                 alarmSoundUri = alarmSoundUri,
                 blackTheme = blackTheme,
+                buttonSizeScale = buttonSizeScale,
                 aodEnabled = aodEnabled,
                 alarmEnabled = alarmEnabled,
                 vibrateEnabled = vibrateEnabled,
