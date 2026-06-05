@@ -44,8 +44,11 @@ import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
+import androidx.glance.layout.Column
 import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.height
 import androidx.glance.layout.size
 import androidx.glance.material3.ColorProviders
 import androidx.glance.preview.ExperimentalGlancePreviewApi
@@ -115,13 +118,25 @@ class TimerAppWidget : GlanceAppWidget(), KoinComponent {
                             modifier = GlanceModifier.size(clockHeight.dp)
                         )
                     } else {
-                        GlanceText(
-                            context,
-                            timerState.timeStr,
-                            clockHeight,
-                            if (!breakMode) colors.primary
-                            else colors.tertiary
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            GlanceText(
+                                context,
+                                timerState.activeTimerName,
+                                clockHeight * 0.4f,
+                                if (!breakMode) colors.primary
+                                else colors.tertiary
+                            )
+                            Spacer(GlanceModifier.height(4.dp))
+                            GlanceText(
+                                context,
+                                timerState.timeStr,
+                                clockHeight,
+                                if (!breakMode) colors.primary
+                                else colors.tertiary
+                            )
+                        }
                     }
                 }
 

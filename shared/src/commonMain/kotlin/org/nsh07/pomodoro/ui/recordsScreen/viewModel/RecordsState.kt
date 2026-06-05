@@ -15,28 +15,26 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package org.nsh07.pomodoro.ui.timerScreen.viewModel
+package org.nsh07.pomodoro.ui.recordsScreen.viewModel
 
 import androidx.compose.runtime.Immutable
+import org.nsh07.pomodoro.data.CounterRecord
+import org.nsh07.pomodoro.data.CustomTimer
+import org.nsh07.pomodoro.data.TimerSession
+import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerState
 
 @Immutable
-data class TimerState(
-    val timerMode: TimerMode = TimerMode.FOCUS,
-    val timeStr: String = "25:00",
-    val totalTime: Long = 25 * 60,
-    val timerRunning: Boolean = false,
-    val nextTimerMode: TimerMode = TimerMode.SHORT_BREAK,
-    val nextTimeStr: String = "5:00",
-    val showBrandTitle: Boolean = true,
-    val currentFocusCount: Int = 1,
-    val totalFocusCount: Int = 4,
-    val alarmRinging: Boolean = false,
-    val serviceRunning: Boolean = false,
-    val infiniteFocus: Boolean = false,
-    val activeTimerName: String = "专注",
-    val activeTimerId: Long? = null
+data class RecordsState(
+    val selectedTab: Int = 0,
+    val customTimers: List<CustomTimer> = emptyList(),
+    val activeTimerId: Long? = null,
+    val timerState: TimerState = TimerState(),
+    val todaySessions: List<TimerSession> = emptyList(),
+    val counters: List<CounterRecord> = emptyList(),
+    val counterCounts: Map<Long, Int> = emptyMap(),
+    val showAddTimerSheet: Boolean = false,
+    val showAddCounterSheet: Boolean = false,
+    val statsPeriod: StatsPeriod = StatsPeriod.WEEK
 )
 
-enum class TimerMode {
-    FOCUS, SHORT_BREAK, LONG_BREAK, BRAND
-}
+enum class StatsPeriod { WEEK, MONTH }

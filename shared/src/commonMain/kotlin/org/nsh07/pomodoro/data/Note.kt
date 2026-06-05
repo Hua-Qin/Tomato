@@ -15,28 +15,20 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package org.nsh07.pomodoro.ui.timerScreen.viewModel
+package org.nsh07.pomodoro.data
 
 import androidx.compose.runtime.Immutable
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
 @Immutable
-data class TimerState(
-    val timerMode: TimerMode = TimerMode.FOCUS,
-    val timeStr: String = "25:00",
-    val totalTime: Long = 25 * 60,
-    val timerRunning: Boolean = false,
-    val nextTimerMode: TimerMode = TimerMode.SHORT_BREAK,
-    val nextTimeStr: String = "5:00",
-    val showBrandTitle: Boolean = true,
-    val currentFocusCount: Int = 1,
-    val totalFocusCount: Int = 4,
-    val alarmRinging: Boolean = false,
-    val serviceRunning: Boolean = false,
-    val infiniteFocus: Boolean = false,
-    val activeTimerName: String = "专注",
-    val activeTimerId: Long? = null
+@Entity(tableName = "note")
+data class Note(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String = "",
+    val content: String = "",
+    val createdAt: Long,
+    val updatedAt: Long,
+    val sortOrder: Int = 0,
+    val isPinned: Boolean = false
 )
-
-enum class TimerMode {
-    FOCUS, SHORT_BREAK, LONG_BREAK, BRAND
-}

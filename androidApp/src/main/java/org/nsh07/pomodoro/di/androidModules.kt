@@ -34,13 +34,24 @@ import org.koin.dsl.module
 import org.koin.plugin.module.dsl.create
 import org.koin.plugin.module.dsl.single
 import org.nsh07.pomodoro.R
+import org.nsh07.pomodoro.data.AppCounterRecordRepository
+import org.nsh07.pomodoro.data.AppCustomTimerRepository
+import org.nsh07.pomodoro.data.AppNoteRepository
 import org.nsh07.pomodoro.data.AppPreferenceRepository
 import org.nsh07.pomodoro.data.AppStatRepository
+import org.nsh07.pomodoro.data.AppTaskRepository
+import org.nsh07.pomodoro.data.AppTimerSessionRepository
+import org.nsh07.pomodoro.data.CounterRecordRepository
+import org.nsh07.pomodoro.data.CustomTimerRepository
+import org.nsh07.pomodoro.data.NoteRepository
 import org.nsh07.pomodoro.data.PreferenceRepository
 import org.nsh07.pomodoro.data.StatRepository
 import org.nsh07.pomodoro.data.StateRepository
+import org.nsh07.pomodoro.data.TaskRepository
+import org.nsh07.pomodoro.data.TimerSessionRepository
 import org.nsh07.pomodoro.service.AppServiceHelper
 import org.nsh07.pomodoro.service.ServiceHelper
+import org.nsh07.pomodoro.service.TaskReminderScheduler
 import org.nsh07.pomodoro.service.addTimerActions
 
 val servicesModule = module {
@@ -49,8 +60,14 @@ val servicesModule = module {
     single<AppInfo> { create(::createAppInfo) }
     single<AppStatRepository>() bind StatRepository::class
     single<AppPreferenceRepository>() bind PreferenceRepository::class
+    single<AppTaskRepository>() bind TaskRepository::class
+    single<AppNoteRepository>() bind NoteRepository::class
+    single<AppTimerSessionRepository>() bind TimerSessionRepository::class
+    single<AppCounterRecordRepository>() bind CounterRecordRepository::class
+    single<AppCustomTimerRepository>() bind CustomTimerRepository::class
     single<StateRepository>()
     single<AppServiceHelper>() bind ServiceHelper::class
+    single { TaskReminderScheduler(get()) }
 
     single { NotificationManagerCompat.from(get()) }
     single { create(::createNotificationManager) }

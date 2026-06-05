@@ -88,25 +88,28 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.nsh07.pomodoro.di.FlavorUI
 import org.nsh07.pomodoro.service.TimerService
+import org.nsh07.pomodoro.ui.collectionScreen.CollectionScreen
+import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionViewModel
+import org.nsh07.pomodoro.ui.recordsScreen.RecordsScreen
+import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsViewModel
 import org.nsh07.pomodoro.ui.settingsScreen.SettingsScreenRoot
 import org.nsh07.pomodoro.ui.settingsScreen.viewModel.SettingsViewModel
-import org.nsh07.pomodoro.ui.statsScreen.StatsScreenRoot
-import org.nsh07.pomodoro.ui.statsScreen.viewModel.StatsViewModel
+import org.nsh07.pomodoro.ui.tasksScreen.TasksScreen
+import org.nsh07.pomodoro.ui.tasksScreen.viewModel.TasksViewModel
 import org.nsh07.pomodoro.ui.timerScreen.AlarmDialog
-import org.nsh07.pomodoro.ui.timerScreen.TimerScreen
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerAction
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerViewModel
 import org.nsh07.pomodoro.utils.onBack
 import tomato.shared.generated.resources.Res
-import tomato.shared.generated.resources.monitoring
-import tomato.shared.generated.resources.monitoring_filled
+import tomato.shared.generated.resources.note_add
+import tomato.shared.generated.resources.note_add_filled
 import tomato.shared.generated.resources.settings
 import tomato.shared.generated.resources.settings_filled
-import tomato.shared.generated.resources.stats
+import tomato.shared.generated.resources.task_list
+import tomato.shared.generated.resources.task_list_filled
 import tomato.shared.generated.resources.timer
 import tomato.shared.generated.resources.timer_filled
-import tomato.shared.generated.resources.timer_outlined
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -118,7 +121,9 @@ fun AppScreen(
     flavorUI: FlavorUI = koinInject(),
     timerViewModel: TimerViewModel = koinViewModel(),
     settingsViewModel: SettingsViewModel = koinViewModel(),
-    statsViewModel: StatsViewModel = koinViewModel()
+    tasksViewModel: TasksViewModel = koinViewModel(),
+    collectionViewModel: CollectionViewModel = koinViewModel(),
+    recordsViewModel: RecordsViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
 
@@ -132,7 +137,7 @@ fun AppScreen(
     val systemBarsInsets = WindowInsets.systemBars.asPaddingValues()
     val cutoutInsets = WindowInsets.displayCutout.asPaddingValues()
 
-    val backStack = rememberNavBackStack(Screen.Timer)
+    val backStack = rememberNavBackStack(Screen.Tasks.Main)
     val toolbarScrollBehavior = FloatingToolbarDefaults.exitAlwaysScrollBehavior(
         FloatingToolbarExitDirection.Bottom
     )
@@ -140,17 +145,23 @@ fun AppScreen(
     val mainScreens = remember {
         listOf(
             NavItem(
-                Screen.Timer,
-                Res.drawable.timer_outlined,
-                Res.drawable.timer_filled,
-                Res.string.timer
+                Screen.Tasks.Main,
+                Res.drawable.task_list,
+                Res.drawable.task_list_filled,
+                Res.string.tasks
             ) {},
             NavItem(
-                Screen.Stats.Main,
-                Res.drawable.monitoring,
-                Res.drawable.monitoring_filled,
-                Res.string.stats
-            ) { statsViewModel.backStack.removeRange(1, statsViewModel.backStack.size) },
+                Screen.Collection.Main,
+                Res.drawable.note_add,
+                Res.drawable.note_add_filled,
+                Res.string.collection
+            ) {},
+            NavItem(
+                Screen.Records.Main,
+                Res.drawable.timer,
+                Res.drawable.timer_filled,
+                Res.string.records
+            ) {},
             NavItem(
                 Screen.Settings.Main,
                 Res.drawable.settings,
@@ -234,11 +245,13 @@ fun AppScreen(
                                     checked = selected,
                                     onCheckedChange = if (!selected) {
                                         {
-                                            if (item.route != Screen.Timer) { // Ensure the backstack does not accumulate screens
+                                            val idx = mainScreens.indexOf(item)
+                                            if (idx == 0) {
+                                                // Home tab: clear backstack to just this screen
+                                                while (backStack.size > 1) backStack.removeAt(1)
+                                            } else {
                                                 if (backStack.size < 2) backStack.add(item.route)
                                                 else backStack[1] = item.route
-                                            } else {
-                                                if (backStack.size > 1) backStack.removeAt(1)
                                             }
                                         }
                                     } else {
@@ -310,21 +323,24 @@ fun AppScreen(
                         .togetherWith(fadeOut(motionScheme.defaultEffectsSpec()))
                 },
                 entryProvider = entryProvider {
-                    entry<Screen.Timer> {
-                        TimerScreen(
-                            timerState = uiState,
-                            settingsState = settingsState,
-                            isPlus = isPlus,
+                    entry<Screen.Tasks.Main> {
+                        TasksScreen(
                             contentPadding = contentPadding,
-                            progress = { progress },
-                            onAction = timerViewModel::onAction,
-                            modifier = if (isAODEnabled) Modifier
-                                .clickable {
-                                    if (!uiState.timerRunning)
-                                        timerViewModel.onAction(TimerAction.ToggleTimer)
-                                    if (backStack.size < 2)
-                                        backStack.add(Screen.AOD)
-                                } else Modifier
+                            onAction = tasksViewModel::onAction
+                        )
+                    }
+
+                    entry<Screen.Collection.Main> {
+                        CollectionScreen(
+                            contentPadding = contentPadding,
+                            onAction = collectionViewModel::onAction
+                        )
+                    }
+
+                    entry<Screen.Records.Main> {
+                        RecordsScreen(
+                            contentPadding = contentPadding,
+                            onAction = recordsViewModel::onAction
                         )
                     }
 
@@ -344,13 +360,6 @@ fun AppScreen(
                         SettingsScreenRoot(
                             setShowPaywall = { showPaywall = it },
                             contentPadding = contentPadding
-                        )
-                    }
-
-                    entry<Screen.Stats.Main> {
-                        StatsScreenRoot(
-                            contentPadding = contentPadding,
-                            focusGoal = settingsState.focusGoal
                         )
                     }
                 }

@@ -23,12 +23,46 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 
 sealed class Screen : NavKey {
+    // 计划任务（新首页）
     @Serializable
-    object Timer : Screen()
+    sealed class Tasks : Screen() {
+        @Serializable
+        object Main : Tasks()
 
+        @Serializable
+        object AddTask : Tasks()
+
+        @Serializable
+        data class EditTask(val taskId: Long) : Tasks()
+    }
+
+    // 收集
     @Serializable
-    object AOD : Screen()
+    sealed class Collection : Screen() {
+        @Serializable
+        object Main : Collection()
 
+        @Serializable
+        object AddNote : Collection()
+
+        @Serializable
+        data class EditNote(val noteId: Long) : Collection()
+    }
+
+    // 记录
+    @Serializable
+    sealed class Records : Screen() {
+        @Serializable
+        object Main : Records()
+
+        @Serializable
+        object Timer : Records()
+
+        @Serializable
+        object Statistics : Records()
+    }
+
+    // 设置（保留）
     @Serializable
     sealed class Settings : Screen() {
         @Serializable
@@ -50,20 +84,9 @@ sealed class Screen : NavKey {
         object Timer : Settings()
     }
 
+    // 保留兼容
     @Serializable
-    sealed class Stats : Screen() {
-        @Serializable
-        object Main : Stats()
-
-        @Serializable
-        object LastWeek : Stats()
-
-        @Serializable
-        object LastMonth : Stats()
-
-        @Serializable
-        object LastYear : Stats()
-    }
+    object AOD : Screen()
 }
 
 data class NavItem(

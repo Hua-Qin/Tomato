@@ -24,6 +24,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".TomatoApplication"
@@ -104,6 +107,27 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/history_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TaskListWidgetReceiver"
+            android:exported="true"
+            android:label="@string/pending_tasks">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/task_list_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".service.TaskReminderReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.nsh07.pomodoro.ACTION_SHOW_REMINDER" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
         </receiver>
     </application>
 
