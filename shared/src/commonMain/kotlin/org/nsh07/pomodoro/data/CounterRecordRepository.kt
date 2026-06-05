@@ -19,7 +19,6 @@ package org.nsh07.pomodoro.data
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
@@ -55,11 +54,7 @@ class AppCounterRecordRepository(
 
     override suspend fun incrementCounter(counterId: Long, date: LocalDate) =
         withContext(ioDispatcher) {
-            val entries = counterRecordDao.getEntriesByDate(date)
-            // We need a suspend way to get the current entry
-            // For simplicity, we'll use a direct approach
-            val currentEntries = first(entries)
-            val existing = currentEntries.find { it.counterId == counterId }
+            val existing = counterRecordDao.getEntryByCounterAndDateSync(counterId, date)
             if (existing != null) {
                 counterRecordDao.updateCounterEntry(existing.copy(count = existing.count + 1))
             } else {
@@ -71,9 +66,7 @@ class AppCounterRecordRepository(
 
     override suspend fun decrementCounter(counterId: Long, date: LocalDate) =
         withContext(ioDispatcher) {
-            val entries = counterRecordDao.getEntriesByDate(date)
-            val currentEntries = first(entries)
-            val existing = currentEntries.find { it.counterId == counterId }
+            val existing = counterRecordDao.getEntryByCounterAndDateSync(counterId, date)
             if (existing != null && existing.count > 0) {
                 counterRecordDao.updateCounterEntry(existing.copy(count = existing.count - 1))
             }

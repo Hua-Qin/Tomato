@@ -32,6 +32,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -115,7 +116,7 @@ fun NoteEditScreen(
                         )
                     },
                     singleLine = true,
-                    style = typography.titleLarge,
+                    textStyle = typography.titleLarge,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
@@ -194,7 +195,7 @@ fun NoteEditScreen(
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent
                     ),
-                    shape = typography.bodyLarge.shape
+                    shape = shapes.extraSmall
                 )
 
                 HorizontalDivider()

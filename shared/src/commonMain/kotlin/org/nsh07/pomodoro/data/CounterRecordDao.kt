@@ -53,6 +53,9 @@ interface CounterRecordDao {
     @Query("SELECT * FROM counter_entry WHERE counterId = :counterId AND date = :date")
     fun getEntryByCounterAndDate(counterId: Long, date: LocalDate): Flow<CounterEntry?>
 
+    @Query("SELECT * FROM counter_entry WHERE counterId = :counterId AND date = :date")
+    suspend fun getEntryByCounterAndDateSync(counterId: Long, date: LocalDate): CounterEntry?
+
     @Query("SELECT * FROM counter_entry WHERE date = :date")
     fun getEntriesByDate(date: LocalDate): Flow<List<CounterEntry>>
 

@@ -35,17 +35,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -152,7 +151,7 @@ fun CollectionScreen(
                         focusedContainerColor = colorScheme.surfaceContainerLow,
                         unfocusedContainerColor = colorScheme.surfaceContainerLow
                     ),
-                    shape = typography.bodyLarge.shape
+                    shape = shapes.extraSmall
                 )
             }
 
@@ -228,7 +227,7 @@ fun CollectionScreen(
             Icon(
                 painterResource(Res.drawable.add),
                 contentDescription = null,
-                modifier = Modifier.size(FloatingToolbarDefaults.FloatingToolbarIconSize)
+                modifier = Modifier.size(24.dp)
             )
             Text(stringResource(Res.string.add_note))
         }
@@ -246,7 +245,7 @@ private fun NoteCard(
     val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
 
     Surface(
-        shape = CardDefaults.shape,
+        shape = shapes.medium,
         color = colorScheme.surfaceBright,
         modifier = modifier
             .fillMaxWidth()
