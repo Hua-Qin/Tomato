@@ -86,6 +86,9 @@ import tomato.shared.generated.resources.delete
 import tomato.shared.generated.resources.no_tasks
 import tomato.shared.generated.resources.no_tasks_hint
 import tomato.shared.generated.resources.pending_tasks
+import tomato.shared.generated.resources.priority_high
+import tomato.shared.generated.resources.priority_low
+import tomato.shared.generated.resources.priority_medium
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
