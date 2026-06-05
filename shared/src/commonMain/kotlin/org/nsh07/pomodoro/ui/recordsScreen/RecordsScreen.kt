@@ -167,7 +167,8 @@ fun RecordsScreen(
                 )
                 1 -> CounterTab(
                     state = state,
-                    onAction = onAction
+                    onAction = onAction,
+                    contentPadding = contentPadding
                 )
                 2 -> StatisticsTab(
                     state = state,
@@ -515,6 +516,7 @@ private fun SessionItem(
 private fun CounterTab(
     state: RecordsState,
     onAction: (RecordsAction) -> Unit,
+    contentPadding: PaddingValues = PaddingValues(),
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
