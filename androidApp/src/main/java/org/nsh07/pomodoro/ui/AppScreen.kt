@@ -45,6 +45,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.nestedScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -235,7 +236,7 @@ fun AppScreen(
                     Alignment.Center
                 ) {
                     HorizontalFloatingToolbar(
-                        expanded = toolbarScrollBehavior.state.isExpanded,
+                        expanded = true,
                         scrollBehavior = toolbarScrollBehavior,
                         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
                             toolbarContainerColor = primaryContainer,
@@ -322,7 +323,7 @@ fun AppScreen(
                 }
             }
         },
-        modifier = modifier
+        modifier = modifier.nestedScroll(toolbarScrollBehavior)
     ) { contentPadding ->
         SharedTransitionLayout {
             NavDisplay(
