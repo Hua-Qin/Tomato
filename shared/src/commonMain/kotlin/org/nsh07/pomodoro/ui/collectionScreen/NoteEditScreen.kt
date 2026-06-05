@@ -17,7 +17,6 @@
 
 package org.nsh07.pomodoro.ui.collectionScreen
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -27,9 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
@@ -54,14 +51,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -177,7 +178,7 @@ fun NoteEditScreen(
                 }
                 if (content.isNotEmpty()) {
                     Text(
-                        text = renderMarkdown(content),
+                        text = renderMarkdownAnnotated(content),
                         style = typography.bodyLarge,
                         color = colorScheme.onSurface
                     )
@@ -245,12 +246,14 @@ private fun FormatButton(
     style: SpanStyle = SpanStyle(),
     onClick: () -> Unit
 ) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick)
+    val haptic = LocalHapticFeedback.current
+    TextButton(
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            onClick()
+        },
+        modifier = Modifier.size(48.dp),
+        contentPadding = PaddingValues(0.dp)
     ) {
         Text(
             text = buildAnnotatedString {
@@ -302,13 +305,58 @@ private fun insertMarkdownAtLineStart(text: String, prefix: String): String {
     return "$prefix$text"
 }
 
-private fun renderMarkdown(content: String): String {
-    // Basic Markdown rendering: strip syntax markers for display
-    return content
-        .replace(Regex("^###\\s+", RegexOption.MULTILINE), "")
-        .replace(Regex("^##\\s+", RegexOption.MULTILINE), "")
-        .replace(Regex("^#\\s+", RegexOption.MULTILINE), "")
-        .replace(Regex("\\*\\*(.+?)\\*\\*"), "$1")
-        .replace(Regex("\\*(.+?)\\*"), "$1")
-        .replace(Regex("`(.+?)`"), "$1")
+@Composable
+private fun renderMarkdownAnnotated(content: String): AnnotatedString {
+    val codeBackground = colorScheme.surfaceVariant
+    return buildAnnotatedString {
+        content.lines().forEachIndexed { index, line ->
+            if (index > 0) append("\n")
+            when {
+                line.startsWith("### ") -> withStyle(
+                    SpanStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                ) { append(line.removePrefix("### ")) }
+
+                line.startsWith("## ") -> withStyle(
+                    SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                ) { append(line.removePrefix("## ")) }
+
+                line.startsWith("# ") -> withStyle(
+                    SpanStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                ) { append(line.removePrefix("# ")) }
+
+                line.startsWith("- ") -> {
+                    append("• ")
+                    processInlineStyles(line.removePrefix("- "), codeBackground)
+                }
+
+                else -> processInlineStyles(line, codeBackground)
+            }
+        }
+    }
+}
+
+private fun BuildAnnotatedString.processInlineStyles(
+    text: String,
+    codeBackground: Color
+) {
+    val regex = Regex("""(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)""")
+    var lastIndex = 0
+    regex.findAll(text).forEach { match ->
+        append(text.substring(lastIndex, match.range.first))
+        when {
+            match.groupValues[2].isNotEmpty() -> withStyle(
+                SpanStyle(fontWeight = FontWeight.Bold)
+            ) { append(match.groupValues[2]) }
+
+            match.groupValues[3].isNotEmpty() -> withStyle(
+                SpanStyle(fontStyle = FontStyle.Italic)
+            ) { append(match.groupValues[3]) }
+
+            match.groupValues[4].isNotEmpty() -> withStyle(
+                SpanStyle(fontFamily = FontFamily.Monospace, background = codeBackground)
+            ) { append(match.groupValues[4]) }
+        }
+        lastIndex = match.range.last + 1
+    }
+    if (lastIndex < text.length) append(text.substring(lastIndex))
 }

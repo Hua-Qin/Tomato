@@ -18,8 +18,8 @@
 package org.nsh07.pomodoro.ui
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -28,6 +28,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -57,6 +59,7 @@ import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.FloatingToolbarExitDirection
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.PlainTooltip
@@ -111,6 +114,7 @@ import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerViewModel
 import org.nsh07.pomodoro.utils.onBack
 import tomato.shared.generated.resources.Res
+import tomato.shared.generated.resources.arrow_back
 import tomato.shared.generated.resources.collection
 import tomato.shared.generated.resources.note_add
 import tomato.shared.generated.resources.note_add_filled
@@ -238,6 +242,9 @@ fun AppScreen(
                         ),
                     Alignment.Center
                 ) {
+                    val isEditingNote = backStack.lastOrNull() is Screen.Collection.AddNote ||
+                            backStack.lastOrNull() is Screen.Collection.EditNote
+
                     HorizontalFloatingToolbar(
                         expanded = true,
                         scrollBehavior = toolbarScrollBehavior,
@@ -254,70 +261,82 @@ fun AppScreen(
                             .windowInsetsPadding(WindowInsets.ime)
                             .zIndex(1f)
                     ) {
-                        mainScreens.fastForEach { item ->
-                            val selected by remember { derivedStateOf { backStack.lastOrNull() == item.route } }
-                            TooltipBox(
-                                positionProvider =
-                                    TooltipDefaults.rememberTooltipPositionProvider(
-                                        TooltipAnchorPosition.Above
-                                    ),
-                                tooltip = { PlainTooltip { Text(stringResource(item.label)) } },
-                                state = rememberTooltipState()
-                            ) {
-                                ToggleButton(
-                                    checked = selected,
-                                    onCheckedChange = if (!selected) {
-                                        {
-                                            val idx = mainScreens.indexOf(item)
-                                            if (idx == 0) {
-                                                // Home tab: clear backstack to just this screen
-                                                while (backStack.size > 1) backStack.removeAt(1)
-                                            } else {
-                                                if (backStack.size < 2) backStack.add(item.route)
-                                                else backStack[1] = item.route
-                                            }
-                                        }
-                                    } else {
-                                        { item.onNavigateHome() }
-                                    },
-                                    colors = ToggleButtonDefaults.toggleButtonColors(
-                                        containerColor = primaryContainer,
-                                        contentColor = onPrimaryContainer,
-                                        checkedContainerColor = primary,
-                                        checkedContentColor = onPrimary
-                                    ),
-                                    shapes = ToggleButtonDefaults.shapes(
-                                        CircleShape,
-                                        CircleShape,
-                                        CircleShape
-                                    ),
-                                    modifier = Modifier.height(56.dp)
+                        if (isEditingNote) {
+                            IconButton(onClick = { if (backStack.size > 1) backStack.removeLastOrNull() }) {
+                                Icon(
+                                    painterResource(org.nsh07.pomodoro.ui.Res.drawable.arrow_back),
+                                    contentDescription = "Back"
+                                )
+                            }
+                        } else {
+                            mainScreens.fastForEach { item ->
+                                val selected by remember { derivedStateOf { backStack.lastOrNull() == item.route } }
+                                TooltipBox(
+                                    positionProvider =
+                                        TooltipDefaults.rememberTooltipPositionProvider(
+                                            TooltipAnchorPosition.Above
+                                        ),
+                                    tooltip = { PlainTooltip { Text(stringResource(item.label)) } },
+                                    state = rememberTooltipState()
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Crossfade(selected, animationSpec = tween(durationMillis = 300, easing = androidx.compose.animation.core.FastOutSlowInEasing)) {
-                                            if (it) Icon(
-                                                painterResource(item.selectedIcon),
-                                                stringResource(item.label)
-                                            )
-                                            else Icon(
-                                                painterResource(item.unselectedIcon),
-                                                stringResource(item.label)
-                                            )
-                                        }
-                                        AnimatedVisibility(
-                                            visible = selected || wide,
-                                            enter = expandHorizontally(spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)),
-                                            exit = shrinkHorizontally(spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium))
-                                        ) {
-                                            Text(
-                                                text = stringResource(item.label),
-                                                fontSize = 16.sp,
-                                                lineHeight = 24.sp,
-                                                maxLines = 1,
-                                                softWrap = false,
-                                                overflow = TextOverflow.Clip,
-                                                modifier = Modifier.padding(start = ButtonDefaults.IconSpacing)
-                                            )
+                                    ToggleButton(
+                                        checked = selected,
+                                        onCheckedChange = if (!selected) {
+                                            {
+                                                val idx = mainScreens.indexOf(item)
+                                                if (idx == 0) {
+                                                    while (backStack.size > 1) backStack.removeAt(1)
+                                                } else {
+                                                    if (backStack.size < 2) backStack.add(item.route)
+                                                    else backStack[1] = item.route
+                                                }
+                                            }
+                                        } else {
+                                            { item.onNavigateHome() }
+                                        },
+                                        colors = ToggleButtonDefaults.toggleButtonColors(
+                                            containerColor = primaryContainer,
+                                            contentColor = onPrimaryContainer,
+                                            checkedContainerColor = primary,
+                                            checkedContentColor = onPrimary
+                                        ),
+                                        shapes = ToggleButtonDefaults.shapes(
+                                            CircleShape,
+                                            CircleShape,
+                                            CircleShape
+                                        ),
+                                        modifier = Modifier.height(56.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            AnimatedContent(
+                                                selected,
+                                                transitionSpec = {
+                                                    (scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
+                                                        fadeIn(tween(200))) togetherWith
+                                                    (scaleOut(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
+                                                        fadeOut(tween(200)))
+                                                }
+                                            ) { isSelected ->
+                                                Icon(
+                                                    painterResource(if (isSelected) item.selectedIcon else item.unselectedIcon),
+                                                    stringResource(item.label)
+                                                )
+                                            }
+                                            AnimatedVisibility(
+                                                visible = selected || wide,
+                                                enter = expandHorizontally(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)),
+                                                exit = shrinkHorizontally(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                                            ) {
+                                                Text(
+                                                    text = stringResource(item.label),
+                                                    fontSize = 16.sp,
+                                                    lineHeight = 24.sp,
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Clip,
+                                                    modifier = Modifier.padding(start = ButtonDefaults.IconSpacing)
+                                                )
+                                            }
                                         }
                                     }
                                 }

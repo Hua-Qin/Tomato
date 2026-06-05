@@ -18,7 +18,13 @@
 package org.nsh07.pomodoro.ui.recordsScreen
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -76,18 +82,25 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 import org.nsh07.pomodoro.data.CounterRecord
 import org.nsh07.pomodoro.data.TimerSession
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsAction
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsState
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.StatsPeriod
+import org.nsh07.pomodoro.ui.settingsScreen.viewModel.SettingsViewModel
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerState
 import tomato.shared.generated.resources.Res
@@ -100,6 +113,7 @@ import tomato.shared.generated.resources.duration_record
 import tomato.shared.generated.resources.focus
 import tomato.shared.generated.resources.focus_breakdown
 import tomato.shared.generated.resources.focus_breakdown_desc
+import tomato.shared.generated.resources.infinite_focus
 import tomato.shared.generated.resources.long_break
 import tomato.shared.generated.resources.no_counters
 import tomato.shared.generated.resources.no_records
@@ -132,6 +146,10 @@ fun RecordsScreen(
     val pagerState = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
 
+    val settingsViewModel: SettingsViewModel = koinViewModel()
+    val settingsState by settingsViewModel.settingsState.collectAsStateWithLifecycle()
+    val buttonScale = settingsState.buttonSizeScale
+
     val tabTitles = listOf(
         stringResource(Res.string.duration_record),
         stringResource(Res.string.counter_record),
@@ -163,12 +181,14 @@ fun RecordsScreen(
             when (page) {
                 0 -> DurationTab(
                     state = state,
-                    onAction = onAction
+                    onAction = onAction,
+                    buttonScale = buttonScale
                 )
                 1 -> CounterTab(
                     state = state,
                     onAction = onAction,
-                    contentPadding = contentPadding
+                    contentPadding = contentPadding,
+                    buttonScale = buttonScale
                 )
                 2 -> StatisticsTab(
                     state = state,
@@ -201,6 +221,7 @@ fun RecordsScreen(
 private fun DurationTab(
     state: RecordsState,
     onAction: (RecordsAction) -> Unit,
+    buttonScale: Float = 1.0f,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -272,7 +293,8 @@ private fun DurationTab(
         item(contentType = "timer_display") {
             TimerDisplay(
                 timerState = state.timerState,
-                onAction = onAction
+                onAction = onAction,
+                buttonScale = buttonScale
             )
         }
 
@@ -309,8 +331,11 @@ private fun DurationTab(
 private fun TimerDisplay(
     timerState: TimerState,
     onAction: (RecordsAction) -> Unit,
+    buttonScale: Float = 1.0f,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
+    val clockFontSize by animateFloatAsState(if (timerState.infiniteFocus) 72f else 57f, label = "clockFontSize")
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -349,13 +374,19 @@ private fun TimerDisplay(
                 label = "indicatorColor"
             )
 
-            CircularProgressIndicator(
-                progress = { progress.coerceIn(0f, 1f) },
-                color = indicatorColor,
-                trackColor = trackColor,
-                strokeWidth = 8.dp,
-                modifier = Modifier.fillMaxSize()
-            )
+            AnimatedVisibility(
+                !timerState.infiniteFocus,
+                enter = fadeIn() + scaleIn(initialScale = 4f),
+                exit = fadeOut() + scaleOut(targetScale = 4f)
+            ) {
+                CircularProgressIndicator(
+                    progress = { progress.coerceIn(0f, 1f) },
+                    color = indicatorColor,
+                    trackColor = trackColor,
+                    strokeWidth = 8.dp,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -368,19 +399,21 @@ private fun TimerDisplay(
                 )
                 Text(
                     text = timerState.timeStr,
-                    style = typography.displayLarge,
-                    fontWeight = FontWeight.Bold
+                    style = TextStyle(fontSize = clockFontSize.sp, fontWeight = FontWeight.Bold),
                 )
-                Text(
-                    text = when (timerState.timerMode) {
-                        TimerMode.FOCUS -> stringResource(Res.string.focus)
-                        TimerMode.SHORT_BREAK -> stringResource(Res.string.short_break)
-                        TimerMode.LONG_BREAK -> stringResource(Res.string.long_break)
-                        TimerMode.BRAND -> ""
-                    },
-                    style = typography.bodyMedium,
-                    color = colorScheme.onSurfaceVariant
-                )
+                AnimatedContent(timerState.infiniteFocus, label = "modeLabel") { infinite ->
+                    Text(
+                        text = if (infinite) stringResource(Res.string.infinite_focus)
+                        else when (timerState.timerMode) {
+                            TimerMode.FOCUS -> stringResource(Res.string.focus)
+                            TimerMode.SHORT_BREAK -> stringResource(Res.string.short_break)
+                            TimerMode.LONG_BREAK -> stringResource(Res.string.long_break)
+                            TimerMode.BRAND -> ""
+                        },
+                        style = typography.bodyMedium,
+                        color = colorScheme.onSurfaceVariant
+                    )
+                }
                 if (timerState.totalFocusCount > 1) {
                     Text(
                         text = "${timerState.currentFocusCount} / ${timerState.totalFocusCount}",
@@ -401,7 +434,8 @@ private fun TimerDisplay(
         ) {
             FilledTonalIconButton(
                 onClick = { onAction(RecordsAction.ResetTimer) },
-                shapes = IconButtonDefaults.shapes()
+                shapes = IconButtonDefaults.shapes(),
+                modifier = Modifier.size((48 * buttonScale).dp)
             ) {
                 Icon(
                     painterResource(Res.drawable.restart_large),
@@ -426,10 +460,11 @@ private fun TimerDisplay(
                     checkedContainerColor = colorScheme.primary
                 ),
                 modifier = Modifier
-                    .size(72.dp)
+                    .size((72 * buttonScale).dp)
                     .combinedClickable(
                         onClick = { onAction(RecordsAction.ToggleTimer) },
                         onLongClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             isInfiniteLongPressed = true
                             onAction(RecordsAction.StartInfiniteMode)
                         }
@@ -463,7 +498,8 @@ private fun TimerDisplay(
 
             FilledTonalIconButton(
                 onClick = { onAction(RecordsAction.SkipTimer) },
-                shapes = IconButtonDefaults.shapes()
+                shapes = IconButtonDefaults.shapes(),
+                modifier = Modifier.size((48 * buttonScale).dp)
             ) {
                 Icon(
                     painterResource(Res.drawable.skip_next_large),
@@ -517,6 +553,7 @@ private fun CounterTab(
     state: RecordsState,
     onAction: (RecordsAction) -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
+    buttonScale: Float = 1.0f,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -566,6 +603,7 @@ private fun CounterTab(
                 containerColor = colorScheme.primaryContainer,
                 contentColor = colorScheme.onPrimaryContainer,
                 modifier = Modifier
+                    .size((40 * buttonScale).dp)
                     .align(Alignment.BottomEnd)
                     .padding(
                         end = 16.dp,
