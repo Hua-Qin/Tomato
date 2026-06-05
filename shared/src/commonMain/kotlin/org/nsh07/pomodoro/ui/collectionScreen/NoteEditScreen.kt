@@ -335,7 +335,7 @@ private fun renderMarkdownAnnotated(content: String): AnnotatedString {
     }
 }
 
-private fun BuildAnnotatedString.processInlineStyles(
+private fun AnnotatedString.Builder.processInlineStyles(
     text: String,
     codeBackground: Color
 ) {

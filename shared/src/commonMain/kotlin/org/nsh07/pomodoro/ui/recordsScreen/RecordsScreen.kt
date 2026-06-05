@@ -374,7 +374,7 @@ private fun TimerDisplay(
                 label = "indicatorColor"
             )
 
-            AnimatedVisibility(
+            androidx.compose.animation.AnimatedVisibility(
                 !timerState.infiniteFocus,
                 enter = fadeIn() + scaleIn(initialScale = 4f),
                 exit = fadeOut() + scaleOut(targetScale = 4f)
