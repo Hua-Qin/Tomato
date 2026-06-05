@@ -264,7 +264,7 @@ fun AppScreen(
                         if (isEditingNote) {
                             IconButton(onClick = { if (backStack.size > 1) backStack.removeLastOrNull() }) {
                                 Icon(
-                                    painterResource(org.nsh07.pomodoro.ui.Res.drawable.arrow_back),
+                                    painterResource(Res.drawable.arrow_back),
                                     contentDescription = "Back"
                                 )
                             }
