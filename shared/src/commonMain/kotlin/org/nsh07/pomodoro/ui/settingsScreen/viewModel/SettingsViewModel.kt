@@ -109,6 +109,7 @@ class SettingsViewModel(
             is SettingsAction.SaveColorScheme -> saveColorScheme(action.color)
             is SettingsAction.SaveTheme -> saveTheme(action.theme)
             is SettingsAction.SaveBlackTheme -> saveBlackTheme(action.enabled)
+            is SettingsAction.SaveButtonSizeScale -> saveButtonSizeScale(action.scale)
             is SettingsAction.SaveAodEnabled -> saveAodEnabled(action.enabled)
 
             is SettingsAction.SaveFocusGoal -> saveFocusGoal(action.goal)
@@ -300,6 +301,15 @@ class SettingsViewModel(
                 currentState.copy(blackTheme = blackTheme)
             }
             preferenceRepository.saveBooleanPreference("black_theme", blackTheme)
+        }
+    }
+
+    private fun saveButtonSizeScale(scale: Float) {
+        viewModelScope.launch {
+            _settingsState.update { currentState ->
+                currentState.copy(buttonSizeScale = scale)
+            }
+            preferenceRepository.saveStringPreference("button_size_scale", scale.toString())
         }
     }
 

@@ -68,7 +68,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import kotlinx.coroutines.delay
 import org.nsh07.pomodoro.ui.theme.TomatoTheme
-import org.nsh07.pomodoro.ui.timerScreen.TimerScreen
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerState
 import kotlin.random.Random

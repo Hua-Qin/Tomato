@@ -31,6 +31,7 @@ import org.nsh07.pomodoro.di.androidModule
 import org.nsh07.pomodoro.di.dbModule
 import org.nsh07.pomodoro.di.servicesModule
 import org.nsh07.pomodoro.di.viewModels
+import org.nsh07.pomodoro.service.TaskReminderReceiver
 
 class TomatoApplication : Application() {
     override fun onCreate() {
@@ -42,6 +43,12 @@ class TomatoApplication : Application() {
             "timer",
             getString(R.string.timer_progress),
             NotificationManager.IMPORTANCE_DEFAULT
+        )
+
+        val taskReminderChannel = NotificationChannel(
+            TaskReminderReceiver.CHANNEL_TASK_REMINDERS,
+            getString(R.string.tasks),
+            NotificationManager.IMPORTANCE_HIGH
         )
 
 
@@ -60,5 +67,6 @@ class TomatoApplication : Application() {
         }
 
         get<NotificationManagerCompat>().createNotificationChannel(notificationChannel)
+        get<NotificationManagerCompat>().createNotificationChannel(taskReminderChannel)
     }
 }

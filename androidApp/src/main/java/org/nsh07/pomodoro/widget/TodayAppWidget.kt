@@ -66,6 +66,8 @@ import org.nsh07.pomodoro.MainActivity
 import org.nsh07.pomodoro.R
 import org.nsh07.pomodoro.data.Stat
 import org.nsh07.pomodoro.data.StatRepository
+import org.nsh07.pomodoro.data.TaskRepository
+import org.nsh07.pomodoro.data.TimerSessionRepository
 import org.nsh07.pomodoro.ui.theme.lightScheme
 import org.nsh07.pomodoro.utils.millisecondsToHoursMinutes
 import org.nsh07.pomodoro.utils.millisecondsToMinutes
@@ -74,6 +76,7 @@ import org.nsh07.pomodoro.widget.TomatoWidgetSize.Width4
 import org.nsh07.pomodoro.widget.components.GlanceText
 import org.nsh07.pomodoro.widget.components.HorizontalStackedBarGlance
 import java.time.LocalDate
+import java.time.ZoneId
 
 class TodayAppWidget : GlanceAppWidget(), KoinComponent {
     override val sizeMode: SizeMode = SizeMode.Exact
@@ -83,20 +86,26 @@ class TodayAppWidget : GlanceAppWidget(), KoinComponent {
         id: GlanceId
     ) {
         val statRepository: StatRepository = get()
+        val taskRepository: TaskRepository = get()
+        val timerSessionRepository: TimerSessionRepository = get()
         val stat = statRepository.getTodayStat().first()
             ?: Stat(LocalDate.now(), 0, 0, 0, 0, 0)
+        val today = LocalDate.now()
+        val todayStartMillis = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val pendingTaskCount = taskRepository.getPendingTaskCountByDate(todayStartMillis).first()
+        val sessionCount = timerSessionRepository.getSessionCountByDate(today).first()
 
         provideContent {
             key(LocalSize.current) {
                 GlanceTheme {
-                    Content(stat)
+                    Content(stat, pendingTaskCount, sessionCount)
                 }
             }
         }
     }
 
     @Composable
-    private fun Content(stat: Stat) {
+    private fun Content(stat: Stat, pendingTaskCount: Int, sessionCount: Int) {
         val context = LocalContext.current
         val size = LocalSize.current
         val scope = rememberCoroutineScope()
@@ -134,6 +143,26 @@ class TodayAppWidget : GlanceAppWidget(), KoinComponent {
                     isClock = true,
                     modifier = GlanceModifier.padding(top = 8.dp)
                 )
+
+                Row(
+                    modifier = GlanceModifier.padding(top = 8.dp)
+                ) {
+                    Text(
+                        context.getString(R.string.pending_tasks_count, pendingTaskCount),
+                        style = TextStyle(
+                            color = colors.onSurfaceVariant,
+                            fontSize = typography.bodyMedium.fontSize
+                        )
+                    )
+                    Spacer(GlanceModifier.width(12.dp))
+                    Text(
+                        context.getString(R.string.sessions_count, sessionCount),
+                        style = TextStyle(
+                            color = colors.onSurfaceVariant,
+                            fontSize = typography.bodyMedium.fontSize
+                        )
+                    )
+                }
 
                 Spacer(GlanceModifier.defaultWeight())
 
@@ -210,7 +239,9 @@ class TodayAppWidget : GlanceAppWidget(), KoinComponent {
                             focusTimeQ3 = 556490,
                             focusTimeQ4 = 1200498,
                             breakTime = 3939448
-                        )
+                        ),
+                        pendingTaskCount = 3,
+                        sessionCount = 5
                     )
                 }
             }

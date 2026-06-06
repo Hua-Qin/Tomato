@@ -18,13 +18,18 @@
 package org.nsh07.pomodoro.ui
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -33,15 +38,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -50,6 +59,7 @@ import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
 import androidx.compose.material3.FloatingToolbarExitDirection
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.PlainTooltip
@@ -63,6 +73,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -88,23 +99,34 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.nsh07.pomodoro.di.FlavorUI
 import org.nsh07.pomodoro.service.TimerService
+import org.nsh07.pomodoro.ui.collectionScreen.CollectionScreen
+import org.nsh07.pomodoro.ui.collectionScreen.NoteEditScreen
+import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionAction
+import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionViewModel
+import org.nsh07.pomodoro.ui.recordsScreen.RecordsScreen
+import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsViewModel
 import org.nsh07.pomodoro.ui.settingsScreen.SettingsScreenRoot
 import org.nsh07.pomodoro.ui.settingsScreen.viewModel.SettingsViewModel
-import org.nsh07.pomodoro.ui.statsScreen.StatsScreenRoot
-import org.nsh07.pomodoro.ui.statsScreen.viewModel.StatsViewModel
+import org.nsh07.pomodoro.ui.tasksScreen.TasksScreen
+import org.nsh07.pomodoro.ui.tasksScreen.viewModel.TasksViewModel
+import org.nsh07.pomodoro.widget.TaskListAppWidget
+import org.nsh07.pomodoro.widget.TodayAppWidget
+import androidx.glance.appwidget.updateAll
 import org.nsh07.pomodoro.ui.timerScreen.AlarmDialog
-import org.nsh07.pomodoro.ui.timerScreen.TimerScreen
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerAction
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerViewModel
 import org.nsh07.pomodoro.utils.onBack
 import tomato.shared.generated.resources.Res
-import tomato.shared.generated.resources.monitoring
-import tomato.shared.generated.resources.monitoring_filled
+import tomato.shared.generated.resources.collection
+import tomato.shared.generated.resources.note_add
+import tomato.shared.generated.resources.note_add_filled
+import tomato.shared.generated.resources.records
 import tomato.shared.generated.resources.settings
 import tomato.shared.generated.resources.settings_filled
-import tomato.shared.generated.resources.stats
-import tomato.shared.generated.resources.timer
+import tomato.shared.generated.resources.task_list
+import tomato.shared.generated.resources.task_list_filled
+import tomato.shared.generated.resources.tasks
 import tomato.shared.generated.resources.timer_filled
 import tomato.shared.generated.resources.timer_outlined
 
@@ -118,12 +140,16 @@ fun AppScreen(
     flavorUI: FlavorUI = koinInject(),
     timerViewModel: TimerViewModel = koinViewModel(),
     settingsViewModel: SettingsViewModel = koinViewModel(),
-    statsViewModel: StatsViewModel = koinViewModel()
+    tasksViewModel: TasksViewModel = koinViewModel(),
+    collectionViewModel: CollectionViewModel = koinViewModel(),
+    recordsViewModel: RecordsViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
 
     val uiState by timerViewModel.timerState.collectAsStateWithLifecycle()
     val settingsState by settingsViewModel.settingsState.collectAsStateWithLifecycle()
+    val recordsState by recordsViewModel.state.collectAsStateWithLifecycle()
+    val tasksState by tasksViewModel.tasksState.collectAsStateWithLifecycle()
     val progress by timerViewModel.progress.collectAsStateWithLifecycle()
 
     val layoutDirection = LocalLayoutDirection.current
@@ -132,7 +158,7 @@ fun AppScreen(
     val systemBarsInsets = WindowInsets.systemBars.asPaddingValues()
     val cutoutInsets = WindowInsets.displayCutout.asPaddingValues()
 
-    val backStack = rememberNavBackStack(Screen.Timer)
+    val backStack = rememberNavBackStack(Screen.Tasks.Main)
     val toolbarScrollBehavior = FloatingToolbarDefaults.exitAlwaysScrollBehavior(
         FloatingToolbarExitDirection.Bottom
     )
@@ -140,17 +166,23 @@ fun AppScreen(
     val mainScreens = remember {
         listOf(
             NavItem(
-                Screen.Timer,
-                Res.drawable.timer_outlined,
-                Res.drawable.timer_filled,
-                Res.string.timer
+                Screen.Tasks.Main,
+                Res.drawable.task_list,
+                Res.drawable.task_list_filled,
+                Res.string.tasks
             ) {},
             NavItem(
-                Screen.Stats.Main,
-                Res.drawable.monitoring,
-                Res.drawable.monitoring_filled,
-                Res.string.stats
-            ) { statsViewModel.backStack.removeRange(1, statsViewModel.backStack.size) },
+                Screen.Collection.Main,
+                Res.drawable.note_add,
+                Res.drawable.note_add_filled,
+                Res.string.collection
+            ) {},
+            NavItem(
+                Screen.Records.Main,
+                Res.drawable.timer_outlined,
+                Res.drawable.timer_filled,
+                Res.string.records
+            ) {},
             NavItem(
                 Screen.Settings.Main,
                 Res.drawable.settings,
@@ -170,10 +202,30 @@ fun AppScreen(
 
     var showPaywall by remember { mutableStateOf(false) }
 
+    // 任务数据变化时刷新小组件
+    LaunchedEffect(tasksState.pendingTasks, tasksState.completedTasks) {
+        try {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                TaskListAppWidget().updateAll(context)
+                TodayAppWidget().updateAll(context)
+            }
+        } catch (_: Exception) {}
+    }
+
+    // Wrapper to intercept navigation actions from CollectionScreen
+    val collectionActionHandler: (CollectionAction) -> Unit = { action ->
+        when (action) {
+            is CollectionAction.NavigateToAddNote -> backStack.add(Screen.Collection.AddNote)
+            is CollectionAction.NavigateToEditNote -> backStack.add(Screen.Collection.EditNote(action.noteId))
+            else -> collectionViewModel.onAction(action)
+        }
+    }
+
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
-                backStack.last() !is Screen.AOD,
+                backStack.last() !is Screen.AOD &&
+                        !tasksState.showAddDialog && tasksState.editingTask == null,
                 enter = slideInVertically(motionScheme.slowSpatialSpec()) { it },
                 exit = slideOutVertically(motionScheme.slowSpatialSpec()) { it }
             ) {
@@ -218,70 +270,77 @@ fun AppScreen(
                                 bottom = systemBarsInsets.calculateBottomPadding()
                                         + ScreenOffset
                             )
+                            .windowInsetsPadding(WindowInsets.ime)
                             .zIndex(1f)
                     ) {
                         mainScreens.fastForEach { item ->
-                            val selected by remember { derivedStateOf { backStack.lastOrNull() == item.route } }
-                            TooltipBox(
-                                positionProvider =
-                                    TooltipDefaults.rememberTooltipPositionProvider(
-                                        TooltipAnchorPosition.Above
-                                    ),
-                                tooltip = { PlainTooltip { Text(stringResource(item.label)) } },
-                                state = rememberTooltipState()
-                            ) {
-                                ToggleButton(
-                                    checked = selected,
-                                    onCheckedChange = if (!selected) {
-                                        {
-                                            if (item.route != Screen.Timer) { // Ensure the backstack does not accumulate screens
-                                                if (backStack.size < 2) backStack.add(item.route)
-                                                else backStack[1] = item.route
-                                            } else {
-                                                if (backStack.size > 1) backStack.removeAt(1)
-                                            }
-                                        }
-                                    } else {
-                                        { item.onNavigateHome() }
-                                    },
-                                    colors = ToggleButtonDefaults.toggleButtonColors(
-                                        containerColor = primaryContainer,
-                                        contentColor = onPrimaryContainer,
-                                        checkedContainerColor = primary,
-                                        checkedContentColor = onPrimary
-                                    ),
-                                    shapes = ToggleButtonDefaults.shapes(
-                                        CircleShape,
-                                        CircleShape,
-                                        CircleShape
-                                    ),
-                                    modifier = Modifier.height(56.dp)
+                                val selected by remember { derivedStateOf { backStack.lastOrNull() == item.route } }
+                                TooltipBox(
+                                    positionProvider =
+                                        TooltipDefaults.rememberTooltipPositionProvider(
+                                            TooltipAnchorPosition.Above
+                                        ),
+                                    tooltip = { PlainTooltip { Text(stringResource(item.label)) } },
+                                    state = rememberTooltipState()
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Crossfade(selected) {
-                                            if (it) Icon(
-                                                painterResource(item.selectedIcon),
-                                                stringResource(item.label)
-                                            )
-                                            else Icon(
-                                                painterResource(item.unselectedIcon),
-                                                stringResource(item.label)
-                                            )
-                                        }
-                                        AnimatedVisibility(
-                                            visible = selected || wide,
-                                            enter = expandHorizontally(motionScheme.defaultSpatialSpec()),
-                                            exit = shrinkHorizontally(motionScheme.defaultSpatialSpec())
-                                        ) {
-                                            Text(
-                                                text = stringResource(item.label),
-                                                fontSize = 16.sp,
-                                                lineHeight = 24.sp,
-                                                maxLines = 1,
-                                                softWrap = false,
-                                                overflow = TextOverflow.Clip,
-                                                modifier = Modifier.padding(start = ButtonDefaults.IconSpacing)
-                                            )
+                                    ToggleButton(
+                                        checked = selected,
+                                        onCheckedChange = if (!selected) {
+                                            {
+                                                val idx = mainScreens.indexOf(item)
+                                                if (idx == 0) {
+                                                    while (backStack.size > 1) backStack.removeAt(1)
+                                                } else {
+                                                    if (backStack.size < 2) backStack.add(item.route)
+                                                    else backStack[1] = item.route
+                                                }
+                                            }
+                                        } else {
+                                            { item.onNavigateHome() }
+                                        },
+                                        colors = ToggleButtonDefaults.toggleButtonColors(
+                                            containerColor = primaryContainer,
+                                            contentColor = onPrimaryContainer,
+                                            checkedContainerColor = primary,
+                                            checkedContentColor = onPrimary
+                                        ),
+                                        shapes = ToggleButtonDefaults.shapes(
+                                            CircleShape,
+                                            CircleShape,
+                                            CircleShape
+                                        ),
+                                        modifier = Modifier.height(56.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            AnimatedContent(
+                                                selected,
+                                                transitionSpec = {
+                                                    (scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
+                                                        fadeIn(tween(200))) togetherWith
+                                                    (scaleOut(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
+                                                        fadeOut(tween(200)))
+                                                }
+                                            ) { isSelected ->
+                                                Icon(
+                                                    painterResource(if (isSelected) item.selectedIcon else item.unselectedIcon),
+                                                    stringResource(item.label)
+                                                )
+                                            }
+                                            AnimatedVisibility(
+                                                visible = selected || wide,
+                                                enter = expandHorizontally(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)),
+                                                exit = shrinkHorizontally(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                                            ) {
+                                                Text(
+                                                    text = stringResource(item.label),
+                                                    fontSize = 16.sp,
+                                                    lineHeight = 24.sp,
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Clip,
+                                                    modifier = Modifier.padding(start = ButtonDefaults.IconSpacing)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -289,9 +348,8 @@ fun AppScreen(
                         }
                     }
                 }
-            }
         },
-        modifier = modifier
+        modifier = modifier.nestedScroll(toolbarScrollBehavior)
     ) { contentPadding ->
         SharedTransitionLayout {
             NavDisplay(
@@ -310,21 +368,43 @@ fun AppScreen(
                         .togetherWith(fadeOut(motionScheme.defaultEffectsSpec()))
                 },
                 entryProvider = entryProvider {
-                    entry<Screen.Timer> {
-                        TimerScreen(
-                            timerState = uiState,
-                            settingsState = settingsState,
-                            isPlus = isPlus,
+                    entry<Screen.Tasks.Main> {
+                        TasksScreen(
                             contentPadding = contentPadding,
-                            progress = { progress },
-                            onAction = timerViewModel::onAction,
-                            modifier = if (isAODEnabled) Modifier
-                                .clickable {
-                                    if (!uiState.timerRunning)
-                                        timerViewModel.onAction(TimerAction.ToggleTimer)
-                                    if (backStack.size < 2)
-                                        backStack.add(Screen.AOD)
-                                } else Modifier
+                            onAction = tasksViewModel::onAction
+                        )
+                    }
+
+                    entry<Screen.Collection.Main> {
+                        CollectionScreen(
+                            contentPadding = contentPadding,
+                            onAction = collectionActionHandler
+                        )
+                    }
+
+                    entry<Screen.Collection.AddNote> {
+                        NoteEditScreen(
+                            noteId = null,
+                            contentPadding = contentPadding,
+                            onAction = collectionActionHandler,
+                            onBack = { if (backStack.size > 1) backStack.removeLastOrNull() }
+                        )
+                    }
+
+                    entry<Screen.Collection.EditNote> { editNote ->
+                        NoteEditScreen(
+                            noteId = editNote.noteId,
+                            contentPadding = contentPadding,
+                            onAction = collectionActionHandler,
+                            onBack = { if (backStack.size > 1) backStack.removeLastOrNull() }
+                        )
+                    }
+
+                    entry<Screen.Records.Main> {
+                        RecordsScreen(
+                            contentPadding = contentPadding,
+                            onAction = recordsViewModel::onAction,
+                            state = recordsState
                         )
                     }
 
@@ -344,13 +424,6 @@ fun AppScreen(
                         SettingsScreenRoot(
                             setShowPaywall = { showPaywall = it },
                             contentPadding = contentPadding
-                        )
-                    }
-
-                    entry<Screen.Stats.Main> {
-                        StatsScreenRoot(
-                            contentPadding = contentPadding,
-                            focusGoal = settingsState.focusGoal
                         )
                     }
                 }
