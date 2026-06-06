@@ -76,7 +76,8 @@ class RecordsViewModel(
                     counterCounts = counterCounts,
                     todaySessions = sessions,
                     timerState = timerState,
-                    activeTimerId = timerState.activeTimerId
+                    activeTimerId = timerState.activeTimerId,
+                    infiniteFocusElapsed = if (timerState.infiniteFocus && timerState.timerRunning) timerState.elapsed else 0L
                 ) }
             }.collect {}
         }

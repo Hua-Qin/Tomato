@@ -246,11 +246,14 @@ class TimerService : Service(), KoinComponent {
                         }
                         break
                     } else {
+                        val elapsed = SystemClock.elapsedRealtime() - startTime - pauseDuration
                         _timerState.update { currentState ->
                             currentState.copy(
-                                timeStr = if (!currentState.infiniteFocus || currentState.timerMode != TimerMode.FOCUS)
-                                    millisecondsToStr(time)
-                                else millisecondsToStr(currentState.totalTime - time) // elapsed time
+                                timeStr = if (currentState.infiniteFocus && currentState.timerMode == TimerMode.FOCUS)
+                                    millisecondsToStr(elapsed) // 正计时
+                                else millisecondsToStr(time), // 倒计时
+                                elapsed = if (currentState.infiniteFocus && currentState.timerMode == TimerMode.FOCUS)
+                                    elapsed else currentState.totalTime - time
                             )
                         }
                         val totalTime = _timerState.value.totalTime

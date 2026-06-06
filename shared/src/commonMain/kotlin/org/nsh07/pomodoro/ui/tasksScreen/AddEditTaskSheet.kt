@@ -46,13 +46,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,6 +61,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import org.nsh07.pomodoro.data.Task
@@ -119,7 +119,6 @@ fun AddEditTaskSheet(
     var category by remember { mutableStateOf(task?.category ?: "") }
 
     var showDatePicker by remember { mutableStateOf(false) }
-    var showTimePicker by remember { mutableStateOf(false) }
 
     val repeatOptions = listOf("none", "daily", "weekly", "monthly", "custom")
     val repeatLabels = listOf(
@@ -200,7 +199,7 @@ fun AddEditTaskSheet(
                 }
             }
 
-            // Due time - always visible with switch
+            // Due time - slider style
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -211,18 +210,28 @@ fun AddEditTaskSheet(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(Res.string.due_time))
-                if (hasDueTime) {
-                    Spacer(Modifier.weight(1f))
-                    TextButton(onClick = { showTimePicker = true }) {
-                        Text(
-                            String.format(
-                                java.util.Locale.getDefault(),
-                                "%02d:%02d",
-                                dueTime / 60,
-                                dueTime % 60
-                            )
-                        )
-                    }
+            }
+            if (hasDueTime) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Slider(
+                        value = dueTime.toFloat(),
+                        onValueChange = { dueTime = it.toInt() },
+                        valueRange = 0f..1440f,
+                        steps = (1440 / 5) - 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = String.format(
+                            java.util.Locale.getDefault(),
+                            "%02d:%02d",
+                            dueTime / 60,
+                            dueTime % 60
+                        ),
+                        style = typography.bodyLarge,
+                        color = colorScheme.primary,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
 
@@ -376,38 +385,6 @@ fun AddEditTaskSheet(
             }
         ) {
             DatePicker(state = datePickerState)
-        }
-    }
-
-    // Time picker dialog
-    if (showTimePicker) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = dueTime / 60,
-            initialMinute = dueTime % 60,
-            is24Hour = true
-        )
-        DatePickerDialog(
-            onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        dueTime = timePickerState.hour * 60 + timePickerState.minute
-                        showTimePicker = false
-                    }
-                ) { Text(stringResource(Res.string.ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(stringResource(Res.string.cancel))
-                }
-            }
-        ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                TimeInput(state = timePickerState)
-            }
         }
     }
 }

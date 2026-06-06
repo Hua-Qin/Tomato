@@ -73,6 +73,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -108,6 +109,8 @@ import org.nsh07.pomodoro.ui.settingsScreen.SettingsScreenRoot
 import org.nsh07.pomodoro.ui.settingsScreen.viewModel.SettingsViewModel
 import org.nsh07.pomodoro.ui.tasksScreen.TasksScreen
 import org.nsh07.pomodoro.ui.tasksScreen.viewModel.TasksViewModel
+import org.nsh07.pomodoro.widget.TaskListAppWidget
+import org.nsh07.pomodoro.widget.TodayAppWidget
 import org.nsh07.pomodoro.ui.timerScreen.AlarmDialog
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerAction
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
@@ -145,6 +148,7 @@ fun AppScreen(
     val uiState by timerViewModel.timerState.collectAsStateWithLifecycle()
     val settingsState by settingsViewModel.settingsState.collectAsStateWithLifecycle()
     val recordsState by recordsViewModel.state.collectAsStateWithLifecycle()
+    val tasksState by tasksViewModel.tasksState.collectAsStateWithLifecycle()
     val progress by timerViewModel.progress.collectAsStateWithLifecycle()
 
     val layoutDirection = LocalLayoutDirection.current
@@ -197,6 +201,14 @@ fun AppScreen(
 
     var showPaywall by remember { mutableStateOf(false) }
 
+    // 任务数据变化时刷新小组件
+    LaunchedEffect(tasksState.pendingTasks, tasksState.completedTasks) {
+        try {
+            TaskListAppWidget().updateAll(context)
+            TodayAppWidget().updateAll(context)
+        } catch (_: Exception) {}
+    }
+
     // Wrapper to intercept navigation actions from CollectionScreen
     val collectionActionHandler: (CollectionAction) -> Unit = { action ->
         when (action) {
@@ -209,7 +221,8 @@ fun AppScreen(
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
-                backStack.last() !is Screen.AOD,
+                backStack.last() !is Screen.AOD &&
+                        !tasksState.showAddDialog && tasksState.editingTask == null,
                 enter = slideInVertically(motionScheme.slowSpatialSpec()) { it },
                 exit = slideOutVertically(motionScheme.slowSpatialSpec()) { it }
             ) {

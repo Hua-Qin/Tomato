@@ -116,19 +116,17 @@ class TaskListAppWidget : GlanceAppWidget(), KoinComponent {
                 startIcon = ImageProvider(R.drawable.tomato_logo_notification),
                 title = context.getString(R.string.pending_tasks),
                 actions = {
-                    if (size.width >= Width4) {
-                        Box(GlanceModifier.padding(horizontal = 16.dp)) {
-                            Image(
-                                provider = ImageProvider(R.drawable.refresh),
-                                contentDescription = null,
-                                colorFilter = ColorFilter.tint(colors.onSurface),
-                                modifier = GlanceModifier
-                                    .cornerRadius(24.dp)
-                                    .clickable {
-                                        scope.launch { this@TaskListAppWidget.updateAll(context) }
-                                    }
-                            )
-                        }
+                    Box(GlanceModifier.padding(horizontal = 16.dp)) {
+                        Image(
+                            provider = ImageProvider(R.drawable.refresh),
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(colors.onSurface),
+                            modifier = GlanceModifier
+                                .cornerRadius(24.dp)
+                                .clickable {
+                                    scope.launch { this@TaskListAppWidget.updateAll(context) }
+                                }
+                        )
                     }
                 },
             )

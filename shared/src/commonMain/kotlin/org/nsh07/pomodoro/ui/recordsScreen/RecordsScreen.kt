@@ -376,8 +376,10 @@ private fun TimerDisplay(
                 .fillMaxWidth(0.7f)
                 .aspectRatio(1f)
         ) {
-            val progress = if (timerState.totalTime > 0) {
-                (timerState.totalTime.toFloat() - timerState.totalTime) / timerState.totalTime
+            val progress = if (timerState.infiniteFocus) {
+                0f // 无限模式不显示进度
+            } else if (timerState.totalTime > 0) {
+                (timerState.elapsed.toFloat() / timerState.totalTime).coerceIn(0f, 1f)
             } else 0f
 
             val trackColor by animateColorAsState(
@@ -739,7 +741,7 @@ private fun StatisticsTab(
     val countModelProducer = remember { CartesianChartModelProducer() }
 
     // 根据周期计算图表数据
-    val chartData = remember(state.periodSessions, state.statsPeriod) {
+    val chartData = remember(state.periodSessions, state.statsPeriod, state.infiniteFocusElapsed) {
         when (state.statsPeriod) {
             StatsPeriod.DAY -> {
                 // 按小时分组 (Q1: 0-6, Q2: 6-12, Q3: 12-18, Q4: 18-24)
@@ -748,10 +750,17 @@ private fun StatisticsTab(
                 val durations = if (stat != null) listOf(
                     stat.focusTimeQ1, stat.focusTimeQ2, stat.focusTimeQ3, stat.focusTimeQ4
                 ) else listOf(0L, 0L, 0L, 0L)
+                // 累加无限模式实时时长到当前季度
+                val adjustedDurations = if (state.infiniteFocusElapsed > 0) {
+                    val currentQuarter = java.time.LocalTime.now().hour / 6
+                    durations.mapIndexed { index, d ->
+                        if (index == currentQuarter) d + state.infiniteFocusElapsed else d
+                    }
+                } else durations
                 val counts = state.periodSessions.groupBy {
                     Instant.ofEpochMilli(it.startedAt).atZone(ZoneId.systemDefault()).hour / 6
                 }.mapValues { it.value.size }
-                ChartData(labels, durations, counts.map { it.value })
+                ChartData(labels, adjustedDurations, counts.map { it.value })
             }
             StatsPeriod.WEEK -> {
                 val labels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -831,7 +840,7 @@ private fun StatisticsTab(
             ) {
                 SummaryCard(
                     title = stringResource(Res.string.focus),
-                    value = formatSessionDuration(state.todayTotalFocus),
+                    value = formatSessionDuration(state.todayTotalFocus + state.infiniteFocusElapsed),
                     modifier = Modifier.weight(1f)
                 )
                 SummaryCard(
@@ -843,7 +852,7 @@ private fun StatisticsTab(
         }
 
         // 各计划今日时长
-        if (state.timerDurationStats.isNotEmpty()) {
+        if (state.timerDurationStats.isNotEmpty() || state.infiniteFocusElapsed > 0) {
             item(contentType = "plan_stats") {
                 Surface(
                     shape = shapes.large,
@@ -857,7 +866,23 @@ private fun StatisticsTab(
                             color = colorScheme.primary
                         )
                         Spacer(Modifier.height(8.dp))
-                        state.timerDurationStats.forEach { stat ->
+                        // 合并无限模式实时时长到当前活跃计划
+                        val mergedStats = buildList {
+                            val activeTimerName = state.timerState.activeTimerName
+                            var found = false
+                            state.timerDurationStats.forEach { stat ->
+                                if (stat.timerName == activeTimerName && state.infiniteFocusElapsed > 0) {
+                                    add(stat.copy(totalDuration = stat.totalDuration + state.infiniteFocusElapsed))
+                                    found = true
+                                } else {
+                                    add(stat)
+                                }
+                            }
+                            if (!found && state.infiniteFocusElapsed > 0) {
+                                add(org.nsh07.pomodoro.data.TimerDurationStat(activeTimerName, state.infiniteFocusElapsed))
+                            }
+                        }
+                        mergedStats.forEach { stat ->
                             Row(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 modifier = Modifier
