@@ -86,6 +86,9 @@ class RecordsViewModel(
 
         // 统计数据流：今日各计划时长、今日完成次数、今日Stat、周期内会话、完成任务数、计数器变化
         viewModelScope.launch(Dispatchers.IO) {
+            val completedTaskCountFlow = taskRepository.getCompletedTaskCountByDate(System.currentTimeMillis())
+            val counterTotalChangeFlow = counterRecordRepository.getTotalCounterChangeByDate(LocalDate.now())
+
             combine(
                 timerSessionRepository.getDurationByTimerName(LocalDate.now(), LocalDate.now()),
                 timerSessionRepository.getSessionCountByDate(LocalDate.now()),
@@ -94,9 +97,11 @@ class RecordsViewModel(
                     val (start, end) = getPeriodDates(state.statsPeriod)
                     timerSessionRepository.getSessionsBetweenDates(start, end)
                 },
-                taskRepository.getCompletedTaskCountByDate(System.currentTimeMillis()),
-                counterRecordRepository.getTotalCounterChangeByDate(LocalDate.now())
-            ) { durationStats, sessionCount, todayStat, periodSessions, completedTaskCount, counterTotalChange ->
+                combine(completedTaskCountFlow, counterTotalChangeFlow) { taskCount, counterChange ->
+                    Pair(taskCount, counterChange)
+                }
+            ) { durationStats, sessionCount, todayStat, periodSessions, extraStats ->
+                val (completedTaskCount, counterTotalChange) = extraStats
                 _state.update { it.copy(
                     todayTotalFocus = todayStat?.totalFocusTime() ?: 0L,
                     todaySessionCount = sessionCount,

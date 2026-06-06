@@ -112,6 +112,7 @@ import tomato.shared.generated.resources.Res
 import tomato.shared.generated.resources.autoplay
 import tomato.shared.generated.resources.add
 import tomato.shared.generated.resources.add_counter
+import tomato.shared.generated.resources.cancel
 import tomato.shared.generated.resources.check
 import tomato.shared.generated.resources.completed
 import tomato.shared.generated.resources.counter_record
@@ -125,6 +126,7 @@ import tomato.shared.generated.resources.infinite_focus
 import tomato.shared.generated.resources.long_break
 import tomato.shared.generated.resources.no_counters
 import tomato.shared.generated.resources.no_records
+import tomato.shared.generated.resources.ok
 import tomato.shared.generated.resources.pause
 import tomato.shared.generated.resources.pause_large
 import tomato.shared.generated.resources.play
