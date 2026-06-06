@@ -795,10 +795,13 @@ private fun StatisticsTab(
                         if (index == currentQuarter) d + state.infiniteFocusElapsed else d
                     }
                 } else durations
-                val counts = state.periodSessions.groupBy {
+                val counts = MutableList(4) { 0 }
+                state.periodSessions.groupBy {
                     Instant.ofEpochMilli(it.startedAt).atZone(ZoneId.systemDefault()).hour / 6
-                }.mapValues { it.value.size }
-                ChartData(labels, adjustedDurations, counts.map { it.value })
+                }.forEach { (quarter, sessions) ->
+                    if (quarter in 0..3) counts[quarter] = sessions.size
+                }
+                ChartData(labels, adjustedDurations, counts)
             }
             StatsPeriod.WEEK -> {
                 val labels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
