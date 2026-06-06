@@ -20,6 +20,8 @@ package org.nsh07.pomodoro.ui.recordsScreen.viewModel
 import androidx.compose.runtime.Immutable
 import org.nsh07.pomodoro.data.CounterRecord
 import org.nsh07.pomodoro.data.CustomTimer
+import org.nsh07.pomodoro.data.Stat
+import org.nsh07.pomodoro.data.TimerDurationStat
 import org.nsh07.pomodoro.data.TimerSession
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerState
 
@@ -34,7 +36,12 @@ data class RecordsState(
     val counterCounts: Map<Long, Int> = emptyMap(),
     val showAddTimerSheet: Boolean = false,
     val showAddCounterSheet: Boolean = false,
-    val statsPeriod: StatsPeriod = StatsPeriod.WEEK
+    val statsPeriod: StatsPeriod = StatsPeriod.WEEK,
+    val todayTotalFocus: Long = 0L,
+    val todaySessionCount: Int = 0,
+    val timerDurationStats: List<TimerDurationStat> = emptyList(),
+    val periodSessions: List<TimerSession> = emptyList(),
+    val todayStat: Stat? = null
 )
 
-enum class StatsPeriod { WEEK, MONTH }
+enum class StatsPeriod { DAY, WEEK, MONTH }

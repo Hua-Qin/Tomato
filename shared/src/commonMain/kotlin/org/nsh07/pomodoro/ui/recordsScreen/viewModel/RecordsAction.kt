@@ -37,4 +37,5 @@ sealed interface RecordsAction {
     data object ResetTimer : RecordsAction
     data object SkipTimer : RecordsAction
     data object StartInfiniteMode : RecordsAction
+    data object ExitInfiniteMode : RecordsAction
 }

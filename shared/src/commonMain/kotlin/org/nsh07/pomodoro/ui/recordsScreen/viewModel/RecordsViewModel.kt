@@ -23,25 +23,30 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.nsh07.pomodoro.data.CounterRecord
 import org.nsh07.pomodoro.data.CounterRecordRepository
 import org.nsh07.pomodoro.data.CustomTimer
 import org.nsh07.pomodoro.data.CustomTimerRepository
+import org.nsh07.pomodoro.data.StatRepository
 import org.nsh07.pomodoro.data.StateRepository
 import org.nsh07.pomodoro.data.TimerSessionRepository
 import org.nsh07.pomodoro.service.ServiceHelper
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerAction
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.utils.millisecondsToStr
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 
 class RecordsViewModel(
     private val customTimerRepository: CustomTimerRepository,
     private val timerSessionRepository: TimerSessionRepository,
     private val counterRecordRepository: CounterRecordRepository,
     private val stateRepository: StateRepository,
+    private val statRepository: StatRepository,
     private val serviceHelper: ServiceHelper
 ) : ViewModel() {
 
@@ -51,6 +56,7 @@ class RecordsViewModel(
     private val todayCounterEntries = counterRecordRepository.getEntriesByDate(LocalDate.now())
 
     init {
+        // 核心数据流：计时器、计数器、今日会话
         viewModelScope.launch(Dispatchers.IO) {
             combine(
                 customTimerRepository.getAllCustomTimers(),
@@ -71,6 +77,27 @@ class RecordsViewModel(
                     todaySessions = sessions,
                     timerState = timerState,
                     activeTimerId = timerState.activeTimerId
+                ) }
+            }.collect {}
+        }
+
+        // 统计数据流：今日各计划时长、今日完成次数、今日Stat、周期内会话
+        viewModelScope.launch(Dispatchers.IO) {
+            combine(
+                timerSessionRepository.getDurationByTimerName(LocalDate.now(), LocalDate.now()),
+                timerSessionRepository.getSessionCountByDate(LocalDate.now()),
+                statRepository.getTodayStat(),
+                _state.flatMapLatest { state ->
+                    val (start, end) = getPeriodDates(state.statsPeriod)
+                    timerSessionRepository.getSessionsBetweenDates(start, end)
+                }
+            ) { durationStats, sessionCount, todayStat, periodSessions ->
+                _state.update { it.copy(
+                    todayTotalFocus = todayStat?.totalFocusTime() ?: 0L,
+                    todaySessionCount = sessionCount,
+                    timerDurationStats = durationStats,
+                    periodSessions = periodSessions,
+                    todayStat = todayStat
                 ) }
             }.collect {}
         }
@@ -95,6 +122,7 @@ class RecordsViewModel(
             is RecordsAction.ResetTimer -> resetTimer()
             is RecordsAction.SkipTimer -> skipTimer()
             is RecordsAction.StartInfiniteMode -> startInfiniteMode()
+            is RecordsAction.ExitInfiniteMode -> exitInfiniteMode()
         }
     }
 
@@ -117,6 +145,13 @@ class RecordsViewModel(
         serviceHelper.startService(TimerAction.ResetTimer)
         // Auto-start the timer after reset
         serviceHelper.startService(TimerAction.ToggleTimer)
+    }
+
+    private fun exitInfiniteMode() {
+        stateRepository.timerState.update {
+            it.copy(infiniteFocus = false)
+        }
+        serviceHelper.startService(TimerAction.ResetTimer)
     }
 
     private fun selectTab(index: Int) {
@@ -224,5 +259,23 @@ class RecordsViewModel(
 
     private fun setStatsPeriod(period: StatsPeriod) {
         _state.update { it.copy(statsPeriod = period) }
+    }
+
+    /** 根据统计周期计算起止日期 */
+    private fun getPeriodDates(period: StatsPeriod): Pair<LocalDate, LocalDate> {
+        val today = LocalDate.now()
+        return when (period) {
+            StatsPeriod.DAY -> today to today
+            StatsPeriod.WEEK -> {
+                val start = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                val end = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+                start to end
+            }
+            StatsPeriod.MONTH -> {
+                val start = today.withDayOfMonth(1)
+                val end = today.withDayOfMonth(today.lengthOfMonth())
+                start to end
+            }
+        }
     }
 }

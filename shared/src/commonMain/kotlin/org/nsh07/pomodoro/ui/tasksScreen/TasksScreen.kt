@@ -45,6 +45,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -194,7 +195,7 @@ fun TasksScreen(
 
             // Task list
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(1.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -289,7 +290,7 @@ fun TasksScreen(
         }
 
         // FAB
-        SmallFloatingActionButton(
+        FloatingActionButton(
             onClick = { onAction(TasksAction.ShowAddDialog) },
             containerColor = colorScheme.primaryContainer,
             contentColor = colorScheme.onPrimaryContainer,
@@ -303,7 +304,7 @@ fun TasksScreen(
             Icon(
                 painter = painterResource(Res.drawable.add),
                 contentDescription = stringResource(Res.string.add_task),
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
     }
@@ -425,7 +426,7 @@ private fun TaskItem(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             // Circular check box
             Surface(

@@ -206,4 +206,11 @@
     <string name="minutes_suffix">min</string>
     <string name="default_timer_name">Focus</string>
     <string name="no_tasks_hint">Tap + to add your first task</string>
+    <string name="today_tab">Today</string>
+    <string name="best_record">Best record</string>
+    <string name="enter_infinite_mode">Infinite mode</string>
+    <string name="exit_infinite_mode">Exit infinite</string>
+    <string name="focus_duration_chart">Focus duration</string>
+    <string name="session_count_chart">Session count</string>
+    <string name="today_focus_by_plan">Today's focus by plan</string>
 </resources>

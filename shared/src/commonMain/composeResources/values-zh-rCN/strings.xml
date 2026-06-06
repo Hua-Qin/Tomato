@@ -201,4 +201,11 @@
     <string name="minutes_suffix">分钟</string>
     <string name="default_timer_name">专注</string>
     <string name="no_tasks_hint">点击 + 添加你的第一个任务</string>
+    <string name="today_tab">本日</string>
+    <string name="best_record">最高记录</string>
+    <string name="enter_infinite_mode">无限模式</string>
+    <string name="exit_infinite_mode">退出无限</string>
+    <string name="focus_duration_chart">专注时长</string>
+    <string name="session_count_chart">完成次数</string>
+    <string name="today_focus_by_plan">今日各计划专注时长</string>
 </resources>

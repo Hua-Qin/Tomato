@@ -30,6 +30,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -104,12 +105,15 @@ import org.nsh07.pomodoro.ui.settingsScreen.viewModel.SettingsViewModel
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerState
 import tomato.shared.generated.resources.Res
+import tomato.shared.generated.resources.autoplay
 import tomato.shared.generated.resources.add
 import tomato.shared.generated.resources.add_counter
 import tomato.shared.generated.resources.check
 import tomato.shared.generated.resources.completed
 import tomato.shared.generated.resources.counter_record
 import tomato.shared.generated.resources.duration_record
+import tomato.shared.generated.resources.enter_infinite_mode
+import tomato.shared.generated.resources.exit_infinite_mode
 import tomato.shared.generated.resources.focus
 import tomato.shared.generated.resources.focus_breakdown
 import tomato.shared.generated.resources.focus_breakdown_desc
@@ -127,6 +131,11 @@ import tomato.shared.generated.resources.short_break
 import tomato.shared.generated.resources.skip
 import tomato.shared.generated.resources.skip_next_large
 import tomato.shared.generated.resources.statistics
+import tomato.shared.generated.resources.best_record
+import tomato.shared.generated.resources.today_tab
+import tomato.shared.generated.resources.focus_duration_chart
+import tomato.shared.generated.resources.session_count_chart
+import tomato.shared.generated.resources.today_focus_by_plan
 import tomato.shared.generated.resources.this_month
 import tomato.shared.generated.resources.this_week
 import tomato.shared.generated.resources.today
@@ -134,6 +143,23 @@ import tomato.shared.generated.resources.today_count
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
+import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
+import com.patrykandpatrick.vico.compose.cartesian.data.columnSeries
+import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.layer.ColumnCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.cartesian.rememberFadingEdges
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
+import com.patrykandpatrick.vico.compose.common.Fill
+import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
+import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
+import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
+import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -341,7 +367,7 @@ private fun TimerDisplay(
         verticalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 24.dp)
+            .padding(vertical = 16.dp)
     ) {
         // Circular progress + time display
         Box(
@@ -393,7 +419,7 @@ private fun TimerDisplay(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = timerState.activeTimerName,
+                    text = stringResource(Res.string.focus),
                     style = typography.labelLarge,
                     color = colorScheme.onSurfaceVariant
                 )
@@ -432,14 +458,24 @@ private fun TimerDisplay(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
+            // 无限模式/退出按钮
             FilledTonalIconButton(
-                onClick = { onAction(RecordsAction.ResetTimer) },
+                onClick = {
+                    if (timerState.infiniteFocus) onAction(RecordsAction.ExitInfiniteMode)
+                    else onAction(RecordsAction.StartInfiniteMode)
+                },
                 shapes = IconButtonDefaults.shapes(),
                 modifier = Modifier.size((48 * buttonScale).dp)
             ) {
                 Icon(
-                    painterResource(Res.drawable.restart_large),
-                    contentDescription = stringResource(Res.string.restart)
+                    painterResource(
+                        if (timerState.infiniteFocus) Res.drawable.restart_large
+                        else Res.drawable.autoplay
+                    ),
+                    contentDescription = stringResource(
+                        if (timerState.infiniteFocus) Res.string.exit_infinite_mode
+                        else Res.string.enter_infinite_mode
+                    )
                 )
             }
 
@@ -699,54 +735,95 @@ private fun StatisticsTab(
     onAction: (RecordsAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val modelProducer = remember { CartesianChartModelProducer() }
+    val countModelProducer = remember { CartesianChartModelProducer() }
+
+    // 根据周期计算图表数据
+    val chartData = remember(state.periodSessions, state.statsPeriod) {
+        when (state.statsPeriod) {
+            StatsPeriod.DAY -> {
+                // 按小时分组 (Q1: 0-6, Q2: 6-12, Q3: 12-18, Q4: 18-24)
+                val stat = state.todayStat
+                val labels = listOf("0-6h", "6-12h", "12-18h", "18-24h")
+                val durations = if (stat != null) listOf(
+                    stat.focusTimeQ1, stat.focusTimeQ2, stat.focusTimeQ3, stat.focusTimeQ4
+                ) else listOf(0L, 0L, 0L, 0L)
+                val counts = state.periodSessions.groupBy {
+                    Instant.ofEpochMilli(it.startedAt).atZone(ZoneId.systemDefault()).hour / 6
+                }.mapValues { it.value.size }
+                ChartData(labels, durations, counts.map { it.value })
+            }
+            StatsPeriod.WEEK -> {
+                val labels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                val durations = MutableList(7) { 0L }
+                val counts = MutableList(7) { 0 }
+                state.periodSessions.forEach { session ->
+                    val dayOfWeek = Instant.ofEpochMilli(session.startedAt)
+                        .atZone(ZoneId.systemDefault()).dayOfWeek.value - 1
+                    durations[dayOfWeek] += session.actualDuration
+                    counts[dayOfWeek]++
+                }
+                ChartData(labels, durations, counts)
+            }
+            StatsPeriod.MONTH -> {
+                val today = java.time.LocalDate.now()
+                val daysInMonth = today.lengthOfMonth()
+                val labels = (1..daysInMonth).map { "${it}" }
+                val durations = MutableList(daysInMonth) { 0L }
+                val counts = MutableList(daysInMonth) { 0 }
+                state.periodSessions.forEach { session ->
+                    val day = Instant.ofEpochMilli(session.startedAt)
+                        .atZone(ZoneId.systemDefault()).dayOfMonth - 1
+                    if (day in durations.indices) {
+                        durations[day] += session.actualDuration
+                        counts[day]++
+                    }
+                }
+                ChartData(labels, durations, counts)
+            }
+        }
+    }
+
+    // 更新图表数据
+    LaunchedEffect(chartData) {
+        modelProducer.runTransaction {
+            columnSeries { series(chartData.durations.map { it / 60000.0 }) }
+        }
+        countModelProducer.runTransaction {
+            columnSeries { series(chartData.counts.map { it.toDouble() }) }
+        }
+    }
+
+    // 最高记录
+    val bestRecord = remember(state.periodSessions) {
+        state.periodSessions.maxByOrNull { it.actualDuration }
+    }
+
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(16.dp),
         modifier = modifier.fillMaxSize()
     ) {
-        // Period toggle
+        // 周期切换 (本日/本周/本月)
         item(contentType = "period_selector") {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                SegmentedButton(
-                    shape = SegmentedButtonDefaults.itemShape(0, 2),
-                    selected = state.statsPeriod == StatsPeriod.WEEK,
-                    onClick = { onAction(RecordsAction.SetStatsPeriod(StatsPeriod.WEEK)) },
-                    label = { Text(stringResource(Res.string.this_week)) }
-                )
-                SegmentedButton(
-                    shape = SegmentedButtonDefaults.itemShape(1, 2),
-                    selected = state.statsPeriod == StatsPeriod.MONTH,
-                    onClick = { onAction(RecordsAction.SetStatsPeriod(StatsPeriod.MONTH)) },
-                    label = { Text(stringResource(Res.string.this_month)) }
-                )
-            }
-        }
-
-        // Duration breakdown placeholder
-        item(contentType = "breakdown") {
-            Surface(
-                shape = shapes.large,
-                color = colorScheme.surfaceBright,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        stringResource(Res.string.focus_breakdown),
-                        style = typography.titleMedium
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        stringResource(Res.string.focus_breakdown_desc),
-                        style = typography.bodySmall,
-                        color = colorScheme.onSurfaceVariant
+                StatsPeriod.entries.forEachIndexed { index, period ->
+                    val label = when (period) {
+                        StatsPeriod.DAY -> stringResource(Res.string.today_tab)
+                        StatsPeriod.WEEK -> stringResource(Res.string.this_week)
+                        StatsPeriod.MONTH -> stringResource(Res.string.this_month)
+                    }
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index, StatsPeriod.entries.size),
+                        selected = state.statsPeriod == period,
+                        onClick = { onAction(RecordsAction.SetStatsPeriod(period)) },
+                        label = { Text(label, style = typography.labelSmall) }
                     )
                 }
             }
         }
 
-        // Summary cards
+        // 今日概览卡片
         item(contentType = "summary") {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -754,18 +831,198 @@ private fun StatisticsTab(
             ) {
                 SummaryCard(
                     title = stringResource(Res.string.focus),
-                    value = "0m",
+                    value = formatSessionDuration(state.todayTotalFocus),
                     modifier = Modifier.weight(1f)
                 )
                 SummaryCard(
                     title = stringResource(Res.string.completed),
-                    value = "0",
+                    value = "${state.todaySessionCount}",
                     modifier = Modifier.weight(1f)
                 )
             }
         }
+
+        // 各计划今日时长
+        if (state.timerDurationStats.isNotEmpty()) {
+            item(contentType = "plan_stats") {
+                Surface(
+                    shape = shapes.large,
+                    color = colorScheme.surfaceBright,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            stringResource(Res.string.today_focus_by_plan),
+                            style = typography.titleSmall,
+                            color = colorScheme.primary
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        state.timerDurationStats.forEach { stat ->
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp)
+                            ) {
+                                Text(
+                                    stat.timerName,
+                                    style = typography.bodyMedium,
+                                    color = colorScheme.onSurface
+                                )
+                                Text(
+                                    formatSessionDuration(stat.totalDuration),
+                                    style = typography.bodyMedium,
+                                    color = colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 时长统计图表
+        item(contentType = "duration_chart") {
+            Surface(
+                shape = shapes.large,
+                color = colorScheme.surfaceBright,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        stringResource(Res.string.focus_duration_chart),
+                        style = typography.titleSmall,
+                        color = colorScheme.primary
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    SimpleColumnChart(
+                        modelProducer = modelProducer,
+                        labels = chartData.labels
+                    )
+                }
+            }
+        }
+
+        // 次数统计图表
+        item(contentType = "count_chart") {
+            Surface(
+                shape = shapes.large,
+                color = colorScheme.surfaceBright,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        stringResource(Res.string.session_count_chart),
+                        style = typography.titleSmall,
+                        color = colorScheme.tertiary
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    SimpleColumnChart(
+                        modelProducer = countModelProducer,
+                        labels = chartData.labels,
+                        columnColor = colorScheme.tertiary
+                    )
+                }
+            }
+        }
+
+        // 最高记录
+        if (bestRecord != null) {
+            item(contentType = "best_record") {
+                Surface(
+                    shape = shapes.large,
+                    color = colorScheme.surfaceBright,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            stringResource(Res.string.best_record),
+                            style = typography.titleSmall,
+                            color = colorScheme.primary
+                        )
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                formatSessionDuration(bestRecord.actualDuration),
+                                style = typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = colorScheme.onSurface
+                            )
+                            Text(
+                                formatSessionTime(bestRecord.startedAt),
+                                style = typography.bodySmall,
+                                color = colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
+
+/** 简化的柱状图组件 */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SimpleColumnChart(
+    modelProducer: CartesianChartModelProducer,
+    labels: List<String>,
+    columnColor: androidx.compose.ui.graphics.Color = colorScheme.primary,
+    modifier: Modifier = Modifier
+) {
+    val xValueFormatter = remember(labels) {
+        CartesianValueFormatter { _, value, _ ->
+            val index = value.toInt()
+            if (index in labels.indices) labels[index] else ""
+        }
+    }
+
+    ProvideVicoTheme(rememberM3VicoTheme()) {
+        CartesianChartHost(
+            chart = rememberCartesianChart(
+                rememberColumnCartesianLayer(
+                    ColumnCartesianLayer.ColumnProvider.series(
+                        rememberLineComponent(
+                            fill = Fill(columnColor),
+                            thickness = 8.dp,
+                            shape = CircleShape
+                        )
+                    )
+                ),
+                startAxis = VerticalAxis.rememberStart(
+                    line = rememberLineComponent(Fill.Transparent, 8.dp),
+                    label = rememberTextComponent(typography.bodySmall.copy(colorScheme.onSurface)),
+                    tick = null,
+                    guideline = null,
+                    itemPlacer = VerticalAxis.ItemPlacer.count({ 4 })
+                ),
+                bottomAxis = HorizontalAxis.rememberBottom(
+                    line = rememberLineComponent(Fill.Transparent, 8.dp),
+                    label = rememberTextComponent(typography.bodySmall.copy(colorScheme.onSurface)),
+                    tick = null,
+                    guideline = null,
+                    valueFormatter = xValueFormatter
+                ),
+                fadingEdges = rememberFadingEdges()
+            ),
+            modelProducer = modelProducer,
+            zoomState = rememberVicoZoomState(zoomEnabled = false),
+            scrollState = rememberVicoScrollState(),
+            modifier = modifier.height(180.dp)
+        )
+    }
+}
+
+/** 图表数据辅助类 */
+private data class ChartData(
+    val labels: List<String>,
+    val durations: List<Long>,
+    val counts: List<Int>
+)
 
 @Composable
 private fun SummaryCard(
