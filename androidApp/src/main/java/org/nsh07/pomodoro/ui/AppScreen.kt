@@ -360,6 +360,7 @@ fun AppScreen(
                         }
                     }
                 }
+            }
         },
         modifier = modifier.nestedScroll(toolbarScrollBehavior)
     ) { contentPadding ->
