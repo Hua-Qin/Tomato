@@ -140,19 +140,11 @@ class RecordsViewModel(
     }
 
     private fun startInfiniteMode() {
-        stateRepository.timerState.update {
-            it.copy(infiniteFocus = true)
-        }
-        serviceHelper.startService(TimerAction.ResetTimer)
-        // Auto-start the timer after reset
-        serviceHelper.startService(TimerAction.ToggleTimer)
+        serviceHelper.startService(TimerAction.SetInfiniteFocus(true))
     }
 
     private fun exitInfiniteMode() {
-        stateRepository.timerState.update {
-            it.copy(infiniteFocus = false)
-        }
-        serviceHelper.startService(TimerAction.ResetTimer)
+        serviceHelper.startService(TimerAction.SetInfiniteFocus(false))
     }
 
     private fun selectTab(index: Int) {

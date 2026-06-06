@@ -66,6 +66,10 @@ import kotlin.text.Typography.middleDot
 
 class TimerService : Service(), KoinComponent {
 
+    companion object {
+        const val EXTRA_INFINITE_FOCUS = "extra_infinite_focus"
+    }
+
     private val stateRepository: StateRepository by inject()
     private val statRepository: StatRepository by inject()
     private val timerSessionRepository: TimerSessionRepository by inject()
@@ -175,6 +179,11 @@ class TimerService : Service(), KoinComponent {
             Actions.STOP_ALARM.toString() -> stopAlarm()
 
             Actions.UPDATE_ALARM_TONE.toString() -> updateAlarmTone()
+
+            Actions.SET_INFINITE_FOCUS.toString() -> {
+                val enterInfinite = intent.getBooleanExtra(EXTRA_INFINITE_FOCUS, true)
+                handleSetInfiniteFocus(enterInfinite)
+            }
         }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -187,7 +196,8 @@ class TimerService : Service(), KoinComponent {
             notificationBuilder.clearActions().addTimerActions(
                 this, R.drawable.play, getString(R.string.start)
             )
-            showTimerNotification(time.toInt(), paused = true)
+            val pausedTime = if (_timerState.value.infiniteFocus && _timerState.value.timerMode == TimerMode.FOCUS) 0 else time.toInt()
+            showTimerNotification(pausedTime, paused = true)
             _timerState.update { currentState ->
                 currentState.copy(timerRunning = false)
             }
@@ -214,6 +224,7 @@ class TimerService : Service(), KoinComponent {
 
                     val settingsState = _settingsState.value
                     val timerState = _timerState.value
+                    val isInfiniteFocus = timerState.infiniteFocus && timerState.timerMode == TimerMode.FOCUS
 
                     val focusTime =
                         if (!timerState.infiniteFocus) settingsState.focusTime else Long.MAX_VALUE
@@ -234,7 +245,8 @@ class TimerService : Service(), KoinComponent {
 
                     if (iterations == 0) {
                         Log.d("TimerService", "Notification updated")
-                        showTimerNotification(time.toInt())
+                        val notifTime = if (isInfiniteFocus) 0 else time.toInt()
+                        showTimerNotification(notifTime)
                     }
 
                     if (notificationUpdateCounter == 0) updateWidget()
@@ -249,19 +261,19 @@ class TimerService : Service(), KoinComponent {
                         val elapsed = SystemClock.elapsedRealtime() - startTime - pauseDuration
                         _timerState.update { currentState ->
                             currentState.copy(
-                                timeStr = if (currentState.infiniteFocus && currentState.timerMode == TimerMode.FOCUS)
+                                timeStr = if (isInfiniteFocus)
                                     millisecondsToStr(elapsed) // 正计时
                                 else millisecondsToStr(time), // 倒计时
-                                elapsed = if (currentState.infiniteFocus && currentState.timerMode == TimerMode.FOCUS)
+                                elapsed = if (isInfiniteFocus)
                                     elapsed else currentState.totalTime - time
                             )
                         }
-                        val totalTime = _timerState.value.totalTime
+                        val currentElapsed = if (isInfiniteFocus) elapsed else _timerState.value.totalTime - time
 
-                        if (totalTime - time < lastSavedDuration)
+                        if (currentElapsed < lastSavedDuration)
                             lastSavedDuration =
                                 0 // Sanity check, prevents bugs if service is force closed
-                        if (totalTime - time - lastSavedDuration > 60000)
+                        if (currentElapsed - lastSavedDuration > 60000)
                             saveTimeToDb()
                     }
 
@@ -285,8 +297,10 @@ class TimerService : Service(), KoinComponent {
 
         if (complete) notificationBuilder.clearActions().addStopAlarmAction(this)
 
+        val isInfiniteFocus = timerState.infiniteFocus && timerState.timerMode == TimerMode.FOCUS
+
         val totalTime = when (timerState.timerMode) {
-            TimerMode.FOCUS -> settingsState.focusTime.toInt()
+            TimerMode.FOCUS -> if (isInfiniteFocus) timerState.elapsed.toInt().coerceAtLeast(0) else settingsState.focusTime.toInt()
             TimerMode.SHORT_BREAK -> settingsState.shortBreakTime.toInt()
             else -> settingsState.longBreakTime.toInt()
         }
@@ -303,8 +317,12 @@ class TimerService : Service(), KoinComponent {
             else -> getString(R.string.long_break)
         }
 
-        val remainingTimeString = if ((remainingTime.toFloat() / 60000f) < 1.0f) "< 1"
-        else (remainingTime.toFloat() / 60000f).toInt()
+        val remainingTimeString = if (isInfiniteFocus) {
+            // For infinite mode, show elapsed time in minutes
+            val elapsedMin = (timerState.elapsed / 60000f).toInt().coerceAtLeast(1)
+            elapsedMin.toString()
+        } else if ((remainingTime.toFloat() / 60000f) < 1.0f) "< 1"
+        else (remainingTime.toFloat() / 60000f).toInt().toString()
 
         notificationManager.notify(
             1,
@@ -312,7 +330,7 @@ class TimerService : Service(), KoinComponent {
                 .setContentTitle(
                     if (!complete) {
                         "$currentTimer  $middleDot  ${
-                            if (timerState.timerMode == TimerMode.FOCUS && timerState.infiniteFocus)
+                            if (isInfiniteFocus)
                                 getString(R.string.infinite)
                             else
                                 getString(R.string.min_remaining_notification, remainingTimeString)
@@ -328,19 +346,21 @@ class TimerService : Service(), KoinComponent {
                 )
                 .setStyle(
                     notificationStyle
-                        .setProgress( // Set the current progress by filling the previous intervals and part of the current interval
-                            if (timerState.infiniteFocus) {
-                                if (timerState.timerMode == TimerMode.FOCUS) (Long.MAX_VALUE - remainingTime).toInt()
-                                else (totalTime - remainingTime)
+                        .setProgress(
+                            if (isInfiniteFocus) {
+                                timerState.elapsed.toInt().coerceAtLeast(0)
                             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA && !settingsState.singleProgressBar) {
                                 (totalTime - remainingTime) + ((cycles + 1) / 2) * settingsState.focusTime.toInt() + (cycles / 2) * settingsState.shortBreakTime.toInt()
                             } else (totalTime - remainingTime)
                         )
                 )
-                .setWhen(System.currentTimeMillis() + remainingTime) // Sets the Live Activity/Now Bar chip time
+                .setWhen(
+                    if (isInfiniteFocus) System.currentTimeMillis()
+                    else System.currentTimeMillis() + remainingTime
+                )
                 .setShortCriticalText(
-                    if (timerState.timerMode == TimerMode.FOCUS && timerState.infiniteFocus)
-                        millisecondsToStr((Long.MAX_VALUE - time).coerceAtLeast(0))
+                    if (isInfiniteFocus)
+                        millisecondsToStr(timerState.elapsed.coerceAtLeast(0))
                     else millisecondsToStr(time.coerceAtLeast(0))
                 )
                 .build()
@@ -631,8 +651,13 @@ class TimerService : Service(), KoinComponent {
 
     suspend fun saveTimeToDb() {
         saveLock.withLock {
-            val elapsedTime = _timerState.value.totalTime - time
-            when (_timerState.value.timerMode) {
+            val timerState = _timerState.value
+            val elapsedTime = if (timerState.infiniteFocus && timerState.timerMode == TimerMode.FOCUS) {
+                timerState.elapsed
+            } else {
+                timerState.totalTime - time
+            }
+            when (timerState.timerMode) {
                 TimerMode.FOCUS -> statRepository.addFocusTime(
                     (elapsedTime - lastSavedDuration).coerceAtLeast(0L)
                 )
@@ -652,7 +677,11 @@ class TimerService : Service(), KoinComponent {
     private suspend fun saveSessionToDb() {
         val timerState = _timerState.value
         if (timerState.timerMode != TimerMode.FOCUS) return
-        val elapsedTime = timerState.totalTime - time
+        val elapsedTime = if (timerState.infiniteFocus) {
+            timerState.elapsed
+        } else {
+            timerState.totalTime - time
+        }
         if (elapsedTime <= 0) return
 
         val startWallTime = if (sessionStartWallTime > 0L) sessionStartWallTime
@@ -661,7 +690,7 @@ class TimerService : Service(), KoinComponent {
         timerSessionRepository.insertSession(
             TimerSession(
                 timerName = timerState.activeTimerName,
-                duration = timerState.totalTime,
+                duration = if (timerState.infiniteFocus) elapsedTime else timerState.totalTime,
                 actualDuration = elapsedTime,
                 startedAt = startWallTime,
                 completedAt = System.currentTimeMillis(),
@@ -680,12 +709,89 @@ class TimerService : Service(), KoinComponent {
         stopSelf()
     }
 
+    /**
+     * Handle entering or exiting infinite focus mode.
+     * This is a single atomic operation that resets the timer and optionally starts it,
+     * avoiding the race condition of sending ResetTimer + ToggleTimer separately.
+     */
+    private fun handleSetInfiniteFocus(enterInfinite: Boolean) {
+        startForegroundService()
+
+        // If timer is running, stop it first and save current session
+        if (_timerState.value.timerRunning) {
+            _timerState.update { it.copy(timerRunning = false) }
+        }
+
+        skipScope.launch {
+            // Save any existing session data before resetting
+            saveTimeToDb()
+            saveSessionToDb()
+            lastSavedDuration = 0
+            cycles = 0
+            startTime = 0L
+            sessionStartWallTime = 0L
+            pauseTime = 0L
+            pauseDuration = 0L
+
+            val settingsState = _settingsState.value
+
+            if (enterInfinite) {
+                // Enter infinite focus mode
+                time = Long.MAX_VALUE
+                _timerState.update { currentState ->
+                    currentState.copy(
+                        infiniteFocus = true,
+                        timerMode = TimerMode.FOCUS,
+                        timeStr = millisecondsToStr(0),
+                        totalTime = Long.MAX_VALUE,
+                        timerRunning = false,
+                        nextTimerMode = if (settingsState.sessionLength > 1) TimerMode.SHORT_BREAK else TimerMode.LONG_BREAK,
+                        nextTimeStr = millisecondsToStr(if (settingsState.sessionLength > 1) settingsState.shortBreakTime else settingsState.longBreakTime),
+                        currentFocusCount = 1,
+                        totalFocusCount = settingsState.sessionLength,
+                        elapsed = 0L
+                    )
+                }
+            } else {
+                // Exit infinite focus mode - reset to normal focus
+                time = settingsState.focusTime
+                _timerState.update { currentState ->
+                    currentState.copy(
+                        infiniteFocus = false,
+                        timerMode = TimerMode.FOCUS,
+                        timeStr = millisecondsToStr(settingsState.focusTime),
+                        totalTime = settingsState.focusTime,
+                        timerRunning = false,
+                        nextTimerMode = if (settingsState.sessionLength > 1) TimerMode.SHORT_BREAK else TimerMode.LONG_BREAK,
+                        nextTimeStr = millisecondsToStr(if (settingsState.sessionLength > 1) settingsState.shortBreakTime else settingsState.longBreakTime),
+                        currentFocusCount = 1,
+                        totalFocusCount = settingsState.sessionLength,
+                        elapsed = 0L
+                    )
+                }
+            }
+
+            updateProgressSegments()
+
+            // Auto-start when entering infinite mode
+            if (enterInfinite) {
+                toggleTimer()
+            } else {
+                // Exiting: just show the reset notification
+                notificationBuilder.clearActions().addTimerActions(
+                    this@TimerService, R.drawable.play, getString(R.string.start)
+                )
+                showTimerNotification(time.toInt().coerceAtLeast(0), paused = true)
+            }
+        }
+    }
+
     private fun updateQSTile() {
         val componentName = ComponentName(this, TomatoQSTileService::class.java)
         TileService.requestListeningState(this, componentName)
     }
 
     enum class Actions {
-        TOGGLE, SKIP, RESET, UNDO_RESET, STOP_ALARM, UPDATE_ALARM_TONE
+        TOGGLE, SKIP, RESET, UNDO_RESET, STOP_ALARM, UPDATE_ALARM_TONE, SET_INFINITE_FOCUS
     }
 }

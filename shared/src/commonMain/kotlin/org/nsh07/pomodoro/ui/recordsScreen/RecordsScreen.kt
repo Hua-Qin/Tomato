@@ -60,7 +60,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme.colorScheme
@@ -70,7 +70,6 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -636,22 +635,20 @@ private fun CounterTab(
         }
 
         if (state.counters.isNotEmpty()) {
-            SmallFloatingActionButton(
+            FloatingActionButton(
                 onClick = { onAction(RecordsAction.ShowAddCounterSheet) },
                 containerColor = colorScheme.primaryContainer,
                 contentColor = colorScheme.onPrimaryContainer,
                 modifier = Modifier
-                    .size((40 * buttonScale).dp)
                     .align(Alignment.BottomEnd)
                     .padding(
                         end = 16.dp,
-                        bottom = contentPadding.calculateBottomPadding() + ScreenOffset
+                        bottom = contentPadding.calculateBottomPadding() + 16.dp
                     )
             ) {
                 Icon(
                     painterResource(Res.drawable.add),
-                    contentDescription = stringResource(Res.string.add_counter),
-                    modifier = Modifier.size(24.dp)
+                    contentDescription = stringResource(Res.string.add_counter)
                 )
             }
         }

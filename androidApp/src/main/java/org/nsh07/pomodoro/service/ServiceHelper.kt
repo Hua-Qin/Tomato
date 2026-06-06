@@ -62,7 +62,11 @@ class AppServiceHelper(private val context: Context) : ServiceHelper {
                 }
 
             is TimerAction.SetInfiniteFocus -> {
-                Log.e("StartService", "Invalid action: $action")
+                Intent(context, TimerService::class.java).also {
+                    it.action = TimerService.Actions.SET_INFINITE_FOCUS.toString()
+                    it.putExtra(TimerService.EXTRA_INFINITE_FOCUS, action.value)
+                    context.startService(it)
+                }
             }
         }
     }
