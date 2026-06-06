@@ -977,7 +977,7 @@ private fun SimpleColumnChart(
     val xValueFormatter = remember(labels) {
         CartesianValueFormatter { _, value, _ ->
             val index = value.toInt()
-            if (index in labels.indices) labels[index] else ""
+            if (index in labels.indices) labels[index] else "${index + 1}"
         }
     }
 

@@ -54,17 +54,21 @@ import org.koin.core.component.KoinComponent
 import org.nsh07.pomodoro.R
 import org.nsh07.pomodoro.data.StatRepository
 import org.nsh07.pomodoro.data.StateRepository
+import org.nsh07.pomodoro.data.TimerSession
+import org.nsh07.pomodoro.data.TimerSessionRepository
 import org.nsh07.pomodoro.di.ActivityCallbacks
 import org.nsh07.pomodoro.qsTile.TomatoQSTileService
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.utils.millisecondsToStr
 import org.nsh07.pomodoro.widget.TimerAppWidget
+import java.time.LocalDate
 import kotlin.text.Typography.middleDot
 
 class TimerService : Service(), KoinComponent {
 
     private val stateRepository: StateRepository by inject()
     private val statRepository: StatRepository by inject()
+    private val timerSessionRepository: TimerSessionRepository by inject()
     private val notificationManager: NotificationManagerCompat by inject()
     private val notificationManagerService: NotificationManager by inject()
     private val notificationBuilder: NotificationCompat.Builder by inject()
@@ -86,6 +90,7 @@ class TimerService : Service(), KoinComponent {
 
     private var cycles = 0
     private var startTime = 0L
+    private var sessionStartWallTime = 0L
     private var pauseTime = 0L
     private var pauseDuration = 0L
 
@@ -202,7 +207,10 @@ class TimerService : Service(), KoinComponent {
             timerScope.launch {
                 while (true) {
                     if (!_timerState.value.timerRunning) break
-                    if (startTime == 0L) startTime = SystemClock.elapsedRealtime()
+                    if (startTime == 0L) {
+                        startTime = SystemClock.elapsedRealtime()
+                        sessionStartWallTime = System.currentTimeMillis()
+                    }
 
                     val settingsState = _settingsState.value
                     val timerState = _timerState.value
@@ -409,9 +417,11 @@ class TimerService : Service(), KoinComponent {
         )
 
         saveTimeToDb()
+        saveSessionToDb()
         lastSavedDuration = 0
         cycles = 0
         startTime = 0L
+        sessionStartWallTime = 0L
         pauseTime = 0L
         pauseDuration = 0L
 
@@ -446,10 +456,12 @@ class TimerService : Service(), KoinComponent {
     private suspend fun skipTimer(fromButton: Boolean = false) {
         val settingsState = _settingsState.value
         saveTimeToDb()
+        saveSessionToDb()
         updateProgressSegments()
         showTimerNotification(0, paused = true, complete = !fromButton)
         lastSavedDuration = 0
         startTime = 0L
+        sessionStartWallTime = 0L
         pauseTime = 0L
         pauseDuration = 0L
 
@@ -628,6 +640,31 @@ class TimerService : Service(), KoinComponent {
             }
             lastSavedDuration = elapsedTime
         }
+    }
+
+    /**
+     * Save a TimerSession record when a focus period ends.
+     * Only called from skipTimer() and resetTimer() for FOCUS mode.
+     */
+    private suspend fun saveSessionToDb() {
+        val timerState = _timerState.value
+        if (timerState.timerMode != TimerMode.FOCUS) return
+        val elapsedTime = timerState.totalTime - time
+        if (elapsedTime <= 0) return
+
+        val startWallTime = if (sessionStartWallTime > 0L) sessionStartWallTime
+        else System.currentTimeMillis() - elapsedTime
+
+        timerSessionRepository.insertSession(
+            TimerSession(
+                timerName = timerState.activeTimerName,
+                duration = timerState.totalTime,
+                actualDuration = elapsedTime,
+                startedAt = startWallTime,
+                completedAt = System.currentTimeMillis(),
+                date = LocalDate.now()
+            )
+        )
     }
 
     private fun startForegroundService() {

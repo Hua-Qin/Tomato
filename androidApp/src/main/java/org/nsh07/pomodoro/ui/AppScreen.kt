@@ -114,7 +114,6 @@ import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerViewModel
 import org.nsh07.pomodoro.utils.onBack
 import tomato.shared.generated.resources.Res
-import tomato.shared.generated.resources.arrow_back
 import tomato.shared.generated.resources.collection
 import tomato.shared.generated.resources.note_add
 import tomato.shared.generated.resources.note_add_filled
@@ -242,9 +241,6 @@ fun AppScreen(
                         ),
                     Alignment.Center
                 ) {
-                    val isEditingNote = backStack.lastOrNull() is Screen.Collection.AddNote ||
-                            backStack.lastOrNull() is Screen.Collection.EditNote
-
                     HorizontalFloatingToolbar(
                         expanded = true,
                         scrollBehavior = toolbarScrollBehavior,
@@ -261,15 +257,7 @@ fun AppScreen(
                             .windowInsetsPadding(WindowInsets.ime)
                             .zIndex(1f)
                     ) {
-                        if (isEditingNote) {
-                            IconButton(onClick = { if (backStack.size > 1) backStack.removeLastOrNull() }) {
-                                Icon(
-                                    painterResource(Res.drawable.arrow_back),
-                                    contentDescription = "Back"
-                                )
-                            }
-                        } else {
-                            mainScreens.fastForEach { item ->
+                        mainScreens.fastForEach { item ->
                                 val selected by remember { derivedStateOf { backStack.lastOrNull() == item.route } }
                                 TooltipBox(
                                     positionProvider =
@@ -344,7 +332,6 @@ fun AppScreen(
                         }
                     }
                 }
-            }
         },
         modifier = modifier.nestedScroll(toolbarScrollBehavior)
     ) { contentPadding ->

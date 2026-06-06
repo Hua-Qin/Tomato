@@ -207,7 +207,7 @@ fun NoteEditScreen(
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent
                     ),
-                    shape = shapes.extraSmall
+                    shape = shapes.large
                 )
 
                 HorizontalDivider()
