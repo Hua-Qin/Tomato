@@ -111,6 +111,7 @@ import org.nsh07.pomodoro.ui.tasksScreen.TasksScreen
 import org.nsh07.pomodoro.ui.tasksScreen.viewModel.TasksViewModel
 import org.nsh07.pomodoro.widget.TaskListAppWidget
 import org.nsh07.pomodoro.widget.TodayAppWidget
+import androidx.glance.appwidget.updateAll
 import org.nsh07.pomodoro.ui.timerScreen.AlarmDialog
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerAction
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
@@ -204,8 +205,10 @@ fun AppScreen(
     // 任务数据变化时刷新小组件
     LaunchedEffect(tasksState.pendingTasks, tasksState.completedTasks) {
         try {
-            TaskListAppWidget().updateAll(context)
-            TodayAppWidget().updateAll(context)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                TaskListAppWidget().updateAll(context)
+                TodayAppWidget().updateAll(context)
+            }
         } catch (_: Exception) {}
     }
 
