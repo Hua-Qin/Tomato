@@ -31,6 +31,7 @@ interface CounterRecordRepository {
     suspend fun decrementCounter(counterId: Long, date: LocalDate)
     fun getEntryByCounterAndDate(counterId: Long, date: LocalDate): Flow<CounterEntry?>
     fun getEntriesByDate(date: LocalDate): Flow<List<CounterEntry>>
+    fun getTotalCounterChangeByDate(date: LocalDate): Flow<Int>
 }
 
 class AppCounterRecordRepository(
@@ -79,4 +80,7 @@ class AppCounterRecordRepository(
 
     override fun getEntriesByDate(date: LocalDate): Flow<List<CounterEntry>> =
         counterRecordDao.getEntriesByDate(date)
+
+    override fun getTotalCounterChangeByDate(date: LocalDate): Flow<Int> =
+        counterRecordDao.getTotalCounterChangeByDate(date)
 }

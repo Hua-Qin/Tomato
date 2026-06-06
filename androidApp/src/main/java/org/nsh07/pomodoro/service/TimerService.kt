@@ -331,7 +331,7 @@ class TimerService : Service(), KoinComponent {
                     if (!complete) {
                         "$currentTimer  $middleDot  ${
                             if (isInfiniteFocus)
-                                getString(R.string.infinite)
+                                getString(R.string.focused_for, millisecondsToStr(timerState.elapsed.coerceAtLeast(0)))
                             else
                                 getString(R.string.min_remaining_notification, remainingTimeString)
                         }" + if (paused) "  $middleDot  ${getString(R.string.paused)}" else ""

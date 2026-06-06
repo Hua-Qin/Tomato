@@ -104,6 +104,7 @@ import org.nsh07.pomodoro.ui.collectionScreen.NoteEditScreen
 import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionAction
 import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionViewModel
 import org.nsh07.pomodoro.ui.recordsScreen.RecordsScreen
+import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsAction
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsViewModel
 import org.nsh07.pomodoro.ui.settingsScreen.SettingsScreenRoot
 import org.nsh07.pomodoro.ui.settingsScreen.viewModel.SettingsViewModel
@@ -118,6 +119,8 @@ import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerViewModel
 import org.nsh07.pomodoro.utils.onBack
 import tomato.shared.generated.resources.Res
+import tomato.shared.generated.resources.add
+import tomato.shared.generated.resources.add_item
 import tomato.shared.generated.resources.collection
 import tomato.shared.generated.resources.note_add
 import tomato.shared.generated.resources.note_add_filled
@@ -225,7 +228,10 @@ fun AppScreen(
         bottomBar = {
             AnimatedVisibility(
                 backStack.last() !is Screen.AOD &&
-                        !tasksState.showAddDialog && tasksState.editingTask == null,
+                        backStack.last() !is Screen.Collection.AddNote &&
+                        backStack.last() !is Screen.Collection.EditNote &&
+                        !tasksState.showAddDialog && tasksState.editingTask == null &&
+                        !recordsState.showAddTimerSheet && !recordsState.showAddCounterSheet,
                 enter = slideInVertically(motionScheme.slowSpatialSpec()) { it },
                 exit = slideOutVertically(motionScheme.slowSpatialSpec()) { it }
             ) {
@@ -273,78 +279,84 @@ fun AppScreen(
                             .windowInsetsPadding(WindowInsets.ime)
                             .zIndex(1f)
                     ) {
-                        mainScreens.fastForEach { item ->
-                                val selected by remember { derivedStateOf { backStack.lastOrNull() == item.route } }
-                                TooltipBox(
-                                    positionProvider =
-                                        TooltipDefaults.rememberTooltipPositionProvider(
-                                            TooltipAnchorPosition.Above
-                                        ),
-                                    tooltip = { PlainTooltip { Text(stringResource(item.label)) } },
-                                    state = rememberTooltipState()
-                                ) {
-                                    ToggleButton(
-                                        checked = selected,
-                                        onCheckedChange = if (!selected) {
-                                            {
-                                                val idx = mainScreens.indexOf(item)
-                                                if (idx == 0) {
-                                                    while (backStack.size > 1) backStack.removeAt(1)
-                                                } else {
-                                                    if (backStack.size < 2) backStack.add(item.route)
-                                                    else backStack[1] = item.route
-                                                }
-                                            }
-                                        } else {
-                                            { item.onNavigateHome() }
-                                        },
-                                        colors = ToggleButtonDefaults.toggleButtonColors(
-                                            containerColor = primaryContainer,
-                                            contentColor = onPrimaryContainer,
-                                            checkedContainerColor = primary,
-                                            checkedContentColor = onPrimary
-                                        ),
-                                        shapes = ToggleButtonDefaults.shapes(
-                                            CircleShape,
-                                            CircleShape,
-                                            CircleShape
-                                        ),
-                                        modifier = Modifier.height(56.dp)
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            AnimatedContent(
-                                                selected,
-                                                transitionSpec = {
-                                                    (scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
-                                                        fadeIn(tween(200))) togetherWith
-                                                    (scaleOut(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
-                                                        fadeOut(tween(200)))
-                                                }
-                                            ) { isSelected ->
-                                                Icon(
-                                                    painterResource(if (isSelected) item.selectedIcon else item.unselectedIcon),
-                                                    stringResource(item.label)
-                                                )
-                                            }
-                                            AnimatedVisibility(
-                                                visible = selected || wide,
-                                                enter = expandHorizontally(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)),
-                                                exit = shrinkHorizontally(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
-                                            ) {
-                                                Text(
-                                                    text = stringResource(item.label),
-                                                    fontSize = 16.sp,
-                                                    lineHeight = 24.sp,
-                                                    maxLines = 1,
-                                                    softWrap = false,
-                                                    overflow = TextOverflow.Clip,
-                                                    modifier = Modifier.padding(start = ButtonDefaults.IconSpacing)
-                                                )
+                        // Left side: Tasks + Collection
+                        mainScreens.take(2).fastForEach { item ->
+                            NavToggleButton(
+                                item = item,
+                                selected = backStack.lastOrNull() == item.route,
+                                wide = wide,
+                                primary = primary,
+                                onPrimary = onPrimary,
+                                primaryContainer = primaryContainer,
+                                onPrimaryContainer = onPrimaryContainer,
+                                onNavigate = {
+                                    val idx = mainScreens.indexOf(item)
+                                    if (idx == 0) {
+                                        while (backStack.size > 1) backStack.removeAt(1)
+                                    } else {
+                                        if (backStack.size < 2) backStack.add(item.route)
+                                        else backStack[1] = item.route
+                                    }
+                                },
+                                onNavigateHome = { item.onNavigateHome() }
+                            )
+                        }
+
+                        // Center FAB
+                        val currentScreen = backStack.lastOrNull()
+                        val showFab = currentScreen != Screen.Settings.Main
+                        AnimatedVisibility(
+                            visible = showFab,
+                            enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + fadeIn(),
+                            exit = scaleOut(spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + fadeOut()
+                        ) {
+                            androidx.compose.material3.FloatingActionButton(
+                                onClick = {
+                                    when (currentScreen) {
+                                        Screen.Tasks.Main -> tasksViewModel.onAction(
+                                            org.nsh07.pomodoro.ui.tasksScreen.viewModel.TasksAction.ShowAddDialog
+                                        )
+                                        Screen.Collection.Main -> collectionViewModel.onAction(
+                                            CollectionAction.NavigateToAddNote
+                                        )
+                                        Screen.Records.Main -> {
+                                            if (recordsState.selectedTab == 1) {
+                                                recordsViewModel.onAction(RecordsAction.ShowAddCounterSheet)
+                                            } else {
+                                                recordsViewModel.onAction(RecordsAction.ShowAddTimerSheet)
                                             }
                                         }
+                                        else -> {}
                                     }
-                                }
+                                },
+                                containerColor = primary,
+                                contentColor = onPrimary,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            ) {
+                                Icon(
+                                    painterResource(Res.drawable.add),
+                                    contentDescription = stringResource(Res.string.add_item)
+                                )
                             }
+                        }
+
+                        // Right side: Records + Settings
+                        mainScreens.drop(2).fastForEach { item ->
+                            NavToggleButton(
+                                item = item,
+                                selected = backStack.lastOrNull() == item.route,
+                                wide = wide,
+                                primary = primary,
+                                onPrimary = onPrimary,
+                                primaryContainer = primaryContainer,
+                                onPrimaryContainer = onPrimaryContainer,
+                                onNavigate = {
+                                    val idx = mainScreens.indexOf(item)
+                                    if (backStack.size < 2) backStack.add(item.route)
+                                    else backStack[1] = item.route
+                                },
+                                onNavigateHome = { item.onNavigateHome() }
+                            )
                         }
                     }
                 }
@@ -437,5 +449,81 @@ fun AppScreen(
         exit = slideOutVertically { it }
     ) {
         flavorUI.tomatoPlusPaywallDialog(isPlus) { showPaywall = false }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun NavToggleButton(
+    item: NavItem,
+    selected: Boolean,
+    wide: Boolean,
+    primary: androidx.compose.ui.graphics.Color,
+    onPrimary: androidx.compose.ui.graphics.Color,
+    primaryContainer: androidx.compose.ui.graphics.Color,
+    onPrimaryContainer: androidx.compose.ui.graphics.Color,
+    onNavigate: () -> Unit,
+    onNavigateHome: () -> Unit
+) {
+    val motionScheme = motionScheme
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+            TooltipAnchorPosition.Above
+        ),
+        tooltip = { PlainTooltip { Text(stringResource(item.label)) } },
+        state = rememberTooltipState()
+    ) {
+        ToggleButton(
+            checked = selected,
+            onCheckedChange = if (!selected) {
+                { onNavigate() }
+            } else {
+                { onNavigateHome() }
+            },
+            colors = ToggleButtonDefaults.toggleButtonColors(
+                containerColor = primaryContainer,
+                contentColor = onPrimaryContainer,
+                checkedContainerColor = primary,
+                checkedContentColor = onPrimary
+            ),
+            shapes = ToggleButtonDefaults.shapes(
+                CircleShape,
+                CircleShape,
+                CircleShape
+            ),
+            modifier = Modifier.height(56.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AnimatedContent(
+                    selected,
+                    transitionSpec = {
+                        (scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
+                            fadeIn(tween(200))) togetherWith
+                        (scaleOut(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
+                            fadeOut(tween(200)))
+                    }
+                ) { isSelected ->
+                    Icon(
+                        painterResource(if (isSelected) item.selectedIcon else item.unselectedIcon),
+                        stringResource(item.label)
+                    )
+                }
+                AnimatedVisibility(
+                    visible = selected || wide,
+                    enter = expandHorizontally(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)),
+                    exit = shrinkHorizontally(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                ) {
+                    Text(
+                        text = stringResource(item.label),
+                        fontSize = 16.sp,
+                        lineHeight = 24.sp,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.padding(start = ButtonDefaults.IconSpacing)
+                    )
+                }
+            }
+        }
     }
 }

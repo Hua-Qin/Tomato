@@ -42,7 +42,9 @@ data class RecordsState(
     val timerDurationStats: List<TimerDurationStat> = emptyList(),
     val periodSessions: List<TimerSession> = emptyList(),
     val todayStat: Stat? = null,
-    val infiniteFocusElapsed: Long = 0L
+    val infiniteFocusElapsed: Long = 0L,
+    val todayCompletedTaskCount: Int = 0,
+    val todayCounterTotalChange: Int = 0
 )
 
 enum class StatsPeriod { DAY, WEEK, MONTH }

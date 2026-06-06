@@ -210,25 +210,6 @@ fun CollectionScreen(
                 }
             }
         }
-
-        // FAB
-        FloatingActionButton(
-            onClick = { onAction(CollectionAction.NavigateToAddNote) },
-            containerColor = colorScheme.primaryContainer,
-            contentColor = colorScheme.onPrimaryContainer,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(
-                    end = 16.dp,
-                    bottom = contentPadding.calculateBottomPadding() + ScreenOffset
-                )
-        ) {
-            Icon(
-                painterResource(Res.drawable.add),
-                contentDescription = stringResource(Res.string.add_note),
-                modifier = Modifier.size(32.dp)
-            )
-        }
     }
 }
 

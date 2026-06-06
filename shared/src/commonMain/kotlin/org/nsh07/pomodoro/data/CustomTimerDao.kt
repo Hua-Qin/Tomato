@@ -44,4 +44,7 @@ interface CustomTimerDao {
 
     @Query("DELETE FROM custom_timer WHERE id = :id")
     suspend fun deleteCustomTimerById(id: Long)
+
+    @Query("UPDATE custom_timer SET name = :name WHERE id = :id")
+    suspend fun updateTimerName(id: Long, name: String)
 }

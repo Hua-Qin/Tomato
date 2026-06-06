@@ -56,7 +56,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -135,6 +140,13 @@ import tomato.shared.generated.resources.today_tab
 import tomato.shared.generated.resources.focus_duration_chart
 import tomato.shared.generated.resources.session_count_chart
 import tomato.shared.generated.resources.today_focus_by_plan
+import tomato.shared.generated.resources.edit_name
+import tomato.shared.generated.resources.delete_timer
+import tomato.shared.generated.resources.edit_timer_name
+import tomato.shared.generated.resources.focused_for
+import tomato.shared.generated.resources.add_item
+import tomato.shared.generated.resources.completed_tasks_count
+import tomato.shared.generated.resources.counter_total_change
 import tomato.shared.generated.resources.this_month
 import tomato.shared.generated.resources.this_week
 import tomato.shared.generated.resources.today
@@ -282,34 +294,80 @@ private fun DurationTab(
 
                 items(state.customTimers, key = { it.id }, contentType = { "timer_chip" }) { timer ->
                     val selected = state.activeTimerId == timer.id
-                    FilterChip(
-                        selected = selected,
-                        onClick = { onAction(RecordsAction.SelectTimer(timer.id)) },
-                        label = { Text(timer.name) },
-                        leadingIcon = if (selected) {
-                            {
-                                Icon(
-                                    painterResource(Res.drawable.check),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                            }
-                        } else null
-                    )
-                }
+                    var showMenu by remember { mutableStateOf(false) }
+                    var showEditDialog by remember { mutableStateOf(false) }
+                    var editName by remember { mutableStateOf(timer.name) }
+                    val haptic = LocalHapticFeedback.current
 
-                item(contentType = "add_timer_chip") {
-                    FilterChip(
-                        selected = false,
-                        onClick = { onAction(RecordsAction.ShowAddTimerSheet) },
-                        label = {
-                            Icon(
-                                painterResource(Res.drawable.add),
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
+                    Box {
+                        FilterChip(
+                            selected = selected,
+                            onClick = { onAction(RecordsAction.SelectTimer(timer.id)) },
+                            label = { Text(timer.name) },
+                            leadingIcon = if (selected) {
+                                {
+                                    Icon(
+                                        painterResource(Res.drawable.check),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else null,
+                            modifier = Modifier.combinedClickable(
+                                onClick = { onAction(RecordsAction.SelectTimer(timer.id)) },
+                                onLongClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    showMenu = true
+                                }
+                            )
+                        )
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.edit_name)) },
+                                onClick = {
+                                    showMenu = false
+                                    editName = timer.name
+                                    showEditDialog = true
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.delete_timer)) },
+                                onClick = {
+                                    showMenu = false
+                                    onAction(RecordsAction.DeleteCustomTimer(timer.id))
+                                }
                             )
                         }
-                    )
+                    }
+
+                    if (showEditDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showEditDialog = false },
+                            title = { Text(stringResource(Res.string.edit_timer_name)) },
+                            text = {
+                                OutlinedTextField(
+                                    value = editName,
+                                    onValueChange = { editName = it },
+                                    singleLine = true
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    if (editName.isNotBlank()) {
+                                        onAction(RecordsAction.EditTimerName(timer.id, editName))
+                                    }
+                                    showEditDialog = false
+                                }) { Text(stringResource(Res.string.ok)) }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showEditDialog = false }) { Text(stringResource(Res.string.cancel)) }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -633,25 +691,6 @@ private fun CounterTab(
                 }
             }
         }
-
-        if (state.counters.isNotEmpty()) {
-            FloatingActionButton(
-                onClick = { onAction(RecordsAction.ShowAddCounterSheet) },
-                containerColor = colorScheme.primaryContainer,
-                contentColor = colorScheme.onPrimaryContainer,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(
-                        end = 16.dp,
-                        bottom = contentPadding.calculateBottomPadding() + 16.dp
-                    )
-            ) {
-                Icon(
-                    painterResource(Res.drawable.add),
-                    contentDescription = stringResource(Res.string.add_counter)
-                )
-            }
-        }
     }
 }
 
@@ -841,9 +880,20 @@ private fun StatisticsTab(
                     modifier = Modifier.weight(1f)
                 )
                 SummaryCard(
-                    title = stringResource(Res.string.completed),
-                    value = "${state.todaySessionCount}",
+                    title = stringResource(Res.string.completed_tasks_count),
+                    value = "${state.todayCompletedTaskCount}",
                     modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        // 计数器变化概览
+        if (state.todayCounterTotalChange > 0) {
+            item(contentType = "counter_summary") {
+                SummaryCard(
+                    title = stringResource(Res.string.counter_total_change),
+                    value = "+${state.todayCounterTotalChange}",
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

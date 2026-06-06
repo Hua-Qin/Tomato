@@ -208,4 +208,11 @@
     <string name="focus_duration_chart">专注时长</string>
     <string name="session_count_chart">完成次数</string>
     <string name="today_focus_by_plan">今日各计划专注时长</string>
+    <string name="focused_for">已专注 %1$s</string>
+    <string name="edit_name">编辑名称</string>
+    <string name="delete_timer">删除计时器</string>
+    <string name="edit_timer_name">编辑计时器名称</string>
+    <string name="add_item">添加</string>
+    <string name="completed_tasks_count">完成任务</string>
+    <string name="counter_total_change">计数器变化</string>
 </resources>

@@ -59,4 +59,7 @@ interface TaskDao {
 
     @Query("SELECT COUNT(*) FROM task WHERE isCompleted = 0 AND dueDate IS NOT NULL AND date(dueDate / 1000, 'unixepoch') = date(:date / 1000, 'unixepoch')")
     fun getPendingTaskCountByDate(date: Long): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM task WHERE isCompleted = 1 AND date(completedAt / 1000, 'unixepoch') = date(:timestamp / 1000, 'unixepoch')")
+    fun getCompletedTaskCountByDate(timestamp: Long): Flow<Int>
 }

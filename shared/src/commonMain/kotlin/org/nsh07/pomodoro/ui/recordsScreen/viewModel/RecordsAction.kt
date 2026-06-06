@@ -38,4 +38,5 @@ sealed interface RecordsAction {
     data object SkipTimer : RecordsAction
     data object StartInfiniteMode : RecordsAction
     data object ExitInfiniteMode : RecordsAction
+    data class EditTimerName(val timerId: Long, val newName: String) : RecordsAction
 }

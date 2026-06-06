@@ -288,25 +288,6 @@ fun TasksScreen(
                 }
             }
         }
-
-        // FAB
-        FloatingActionButton(
-            onClick = { onAction(TasksAction.ShowAddDialog) },
-            containerColor = colorScheme.primaryContainer,
-            contentColor = colorScheme.onPrimaryContainer,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(
-                    end = 16.dp,
-                    bottom = contentPadding.calculateBottomPadding() + ScreenOffset
-                )
-        ) {
-            Icon(
-                painter = painterResource(Res.drawable.add),
-                contentDescription = stringResource(Res.string.add_task),
-                modifier = Modifier.size(32.dp)
-            )
-        }
     }
 
     // Add task dialog

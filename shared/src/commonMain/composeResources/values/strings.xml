@@ -213,4 +213,11 @@
     <string name="focus_duration_chart">Focus duration</string>
     <string name="session_count_chart">Session count</string>
     <string name="today_focus_by_plan">Today\'s focus by plan</string>
+    <string name="focused_for">Focused for %1$s</string>
+    <string name="edit_name">Edit name</string>
+    <string name="delete_timer">Delete timer</string>
+    <string name="edit_timer_name">Edit timer name</string>
+    <string name="add_item">Add</string>
+    <string name="completed_tasks_count">Tasks done</string>
+    <string name="counter_total_change">Counter changes</string>
 </resources>

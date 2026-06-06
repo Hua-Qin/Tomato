@@ -38,6 +38,7 @@ interface TaskRepository {
     suspend fun uncompleteTask(taskId: Long)
     fun getPendingTaskCount(): Flow<Int>
     fun getPendingTaskCountByDate(date: Long): Flow<Int>
+    fun getCompletedTaskCountByDate(timestamp: Long): Flow<Int>
 }
 
 class AppTaskRepository(
@@ -100,6 +101,9 @@ class AppTaskRepository(
 
     override fun getPendingTaskCountByDate(date: Long): Flow<Int> =
         taskDao.getPendingTaskCountByDate(date)
+
+    override fun getCompletedTaskCountByDate(timestamp: Long): Flow<Int> =
+        taskDao.getCompletedTaskCountByDate(timestamp)
 
     private fun calculateNextDueDate(task: Task): Long? {
         val dueDate = task.dueDate ?: return null

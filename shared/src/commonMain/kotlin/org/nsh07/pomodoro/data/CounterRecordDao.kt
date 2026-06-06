@@ -61,4 +61,7 @@ interface CounterRecordDao {
 
     @Query("SELECT * FROM counter_entry WHERE counterId = :counterId ORDER BY date DESC")
     fun getEntriesByCounter(counterId: Long): Flow<List<CounterEntry>>
+
+    @Query("SELECT COALESCE(SUM(count), 0) FROM counter_entry WHERE date = :date")
+    fun getTotalCounterChangeByDate(date: LocalDate): Flow<Int>
 }

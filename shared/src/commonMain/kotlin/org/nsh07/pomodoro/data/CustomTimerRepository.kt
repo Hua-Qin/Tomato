@@ -27,6 +27,7 @@ interface CustomTimerRepository {
     suspend fun deleteCustomTimer(timer: CustomTimer)
     fun getAllCustomTimers(): Flow<List<CustomTimer>>
     suspend fun getCustomTimerById(id: Long): CustomTimer?
+    suspend fun updateTimerName(id: Long, name: String)
 }
 
 class AppCustomTimerRepository(
@@ -49,5 +50,9 @@ class AppCustomTimerRepository(
 
     override suspend fun getCustomTimerById(id: Long): CustomTimer? = withContext(ioDispatcher) {
         customTimerDao.getCustomTimerById(id)
+    }
+
+    override suspend fun updateTimerName(id: Long, name: String) = withContext(ioDispatcher) {
+        customTimerDao.updateTimerName(id, name)
     }
 }

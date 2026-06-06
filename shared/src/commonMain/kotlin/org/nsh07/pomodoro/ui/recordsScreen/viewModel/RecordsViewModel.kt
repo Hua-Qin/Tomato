@@ -30,6 +30,7 @@ import org.nsh07.pomodoro.data.CounterRecord
 import org.nsh07.pomodoro.data.CounterRecordRepository
 import org.nsh07.pomodoro.data.CustomTimer
 import org.nsh07.pomodoro.data.CustomTimerRepository
+import org.nsh07.pomodoro.data.TaskRepository
 import org.nsh07.pomodoro.data.StatRepository
 import org.nsh07.pomodoro.data.StateRepository
 import org.nsh07.pomodoro.data.TimerSessionRepository
@@ -47,6 +48,7 @@ class RecordsViewModel(
     private val counterRecordRepository: CounterRecordRepository,
     private val stateRepository: StateRepository,
     private val statRepository: StatRepository,
+    private val taskRepository: TaskRepository,
     private val serviceHelper: ServiceHelper
 ) : ViewModel() {
 
@@ -82,7 +84,7 @@ class RecordsViewModel(
             }.collect {}
         }
 
-        // 统计数据流：今日各计划时长、今日完成次数、今日Stat、周期内会话
+        // 统计数据流：今日各计划时长、今日完成次数、今日Stat、周期内会话、完成任务数、计数器变化
         viewModelScope.launch(Dispatchers.IO) {
             combine(
                 timerSessionRepository.getDurationByTimerName(LocalDate.now(), LocalDate.now()),
@@ -91,14 +93,18 @@ class RecordsViewModel(
                 _state.flatMapLatest { state ->
                     val (start, end) = getPeriodDates(state.statsPeriod)
                     timerSessionRepository.getSessionsBetweenDates(start, end)
-                }
-            ) { durationStats, sessionCount, todayStat, periodSessions ->
+                },
+                taskRepository.getCompletedTaskCountByDate(System.currentTimeMillis()),
+                counterRecordRepository.getTotalCounterChangeByDate(LocalDate.now())
+            ) { durationStats, sessionCount, todayStat, periodSessions, completedTaskCount, counterTotalChange ->
                 _state.update { it.copy(
                     todayTotalFocus = todayStat?.totalFocusTime() ?: 0L,
                     todaySessionCount = sessionCount,
                     timerDurationStats = durationStats,
                     periodSessions = periodSessions,
-                    todayStat = todayStat
+                    todayStat = todayStat,
+                    todayCompletedTaskCount = completedTaskCount,
+                    todayCounterTotalChange = counterTotalChange
                 ) }
             }.collect {}
         }
@@ -124,6 +130,7 @@ class RecordsViewModel(
             is RecordsAction.SkipTimer -> skipTimer()
             is RecordsAction.StartInfiniteMode -> startInfiniteMode()
             is RecordsAction.ExitInfiniteMode -> exitInfiniteMode()
+            is RecordsAction.EditTimerName -> editTimerName(action.timerId, action.newName)
         }
     }
 
@@ -147,6 +154,16 @@ class RecordsViewModel(
         serviceHelper.startService(TimerAction.SetInfiniteFocus(false))
     }
 
+    private fun editTimerName(timerId: Long, newName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            customTimerRepository.updateTimerName(timerId, newName)
+            // If this timer is currently active, update the active name too
+            if (_state.value.activeTimerId == timerId) {
+                stateRepository.timerState.update { it.copy(activeTimerName = newName) }
+            }
+        }
+    }
+
     private fun selectTab(index: Int) {
         _state.update { it.copy(selectedTab = index) }
     }
@@ -168,6 +185,14 @@ class RecordsViewModel(
                         ),
                         currentFocusCount = 1,
                         totalFocusCount = timer.sessionLength,
+                        activeTimerName = timer.name,
+                        activeTimerId = timer.id
+                    )
+                }
+            } else {
+                // Timer is running: only update the name label, don't reset timer
+                stateRepository.timerState.update { currentState ->
+                    currentState.copy(
                         activeTimerName = timer.name,
                         activeTimerId = timer.id
                     )
