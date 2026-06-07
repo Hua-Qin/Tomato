@@ -147,10 +147,9 @@ import tomato.shared.generated.resources.play
 import tomato.shared.generated.resources.play_large
 import tomato.shared.generated.resources.restart
 import tomato.shared.generated.resources.restart_large
+import tomato.shared.generated.resources.end_session
 import tomato.shared.generated.resources.short_break
-import tomato.shared.generated.resources.skip_next
-import tomato.shared.generated.resources.skip_next_large
-import tomato.shared.generated.resources.skip_to_next
+import tomato.shared.generated.resources.stop
 import tomato.shared.generated.resources.timer_reset_message
 import tomato.shared.generated.resources.timer_session_count
 import tomato.shared.generated.resources.timer_settings_reset_info
@@ -590,7 +589,7 @@ fun SharedTransitionScope.TimerScreen(
                                         {
                                             FilledTonalIconButton(
                                                 onClick = {
-                                                    onAction(TimerAction.SkipTimer(fromButton = true))
+                                                    onAction(TimerAction.EndSession)
                                                     haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                                                 },
                                                 colors = IconButtonDefaults.filledTonalIconButtonColors(
@@ -603,8 +602,8 @@ fun SharedTransitionScope.TimerScreen(
                                                     .animateWidth(interactionSources[2])
                                             ) {
                                                 Icon(
-                                                    painterResource(Res.drawable.skip_next_large),
-                                                    contentDescription = stringResource(Res.string.skip_to_next),
+                                                    painterResource(Res.drawable.stop),
+                                                    contentDescription = stringResource(Res.string.end_session),
                                                     modifier = Modifier.size(32.dp)
                                                 )
                                             }
@@ -613,13 +612,13 @@ fun SharedTransitionScope.TimerScreen(
                                             DropdownMenuItem(
                                                 leadingIcon = {
                                                     Icon(
-                                                        painterResource(Res.drawable.skip_next),
-                                                        stringResource(Res.string.skip_to_next)
+                                                        painterResource(Res.drawable.stop),
+                                                        stringResource(Res.string.end_session)
                                                     )
                                                 },
-                                                text = { Text(stringResource(Res.string.skip_to_next)) },
+                                                text = { Text(stringResource(Res.string.end_session)) },
                                                 onClick = {
-                                                    onAction(TimerAction.SkipTimer(fromButton = true))
+                                                    onAction(TimerAction.EndSession)
                                                     state.dismiss()
                                                 }
                                             )

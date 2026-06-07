@@ -82,6 +82,9 @@ sealed class Screen : NavKey {
 
         @Serializable
         object Timer : Settings()
+
+        @Serializable
+        object TimerManager : Settings()
     }
 
     // 保留兼容

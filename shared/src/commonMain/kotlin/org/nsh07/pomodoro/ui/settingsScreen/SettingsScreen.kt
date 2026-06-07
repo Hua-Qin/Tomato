@@ -49,6 +49,7 @@ import org.nsh07.pomodoro.ui.settingsScreen.screens.AboutScreen
 import org.nsh07.pomodoro.ui.settingsScreen.screens.AlarmSettings
 import org.nsh07.pomodoro.ui.settingsScreen.screens.AppearanceSettings
 import org.nsh07.pomodoro.ui.settingsScreen.screens.SettingsMainScreen
+import org.nsh07.pomodoro.ui.settingsScreen.screens.TimerManagerScreen
 import org.nsh07.pomodoro.ui.settingsScreen.screens.TimerSettings
 import org.nsh07.pomodoro.ui.settingsScreen.screens.backupRestore.BackupRestoreScreen
 import org.nsh07.pomodoro.ui.settingsScreen.viewModel.SettingsViewModel
@@ -193,6 +194,16 @@ fun SettingsScreenRoot(
                     setShowPaywall = setShowPaywall,
                     onBack = backStack::onBack,
                     modifier = modifier,
+                )
+            }
+
+            entry<Screen.Settings.TimerManager>(
+                metadata = detailPane()
+            ) {
+                TimerManagerScreen(
+                    contentPadding = contentPadding,
+                    onBack = backStack::onBack,
+                    modifier = modifier
                 )
             }
         },

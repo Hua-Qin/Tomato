@@ -50,13 +50,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
-import androidx.compose.material3.FloatingToolbarExitDirection
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -162,10 +160,6 @@ fun AppScreen(
     val cutoutInsets = WindowInsets.displayCutout.asPaddingValues()
 
     val backStack = rememberNavBackStack(Screen.Tasks.Main)
-    val toolbarScrollBehavior = FloatingToolbarDefaults.exitAlwaysScrollBehavior(
-        FloatingToolbarExitDirection.Bottom
-    )
-
     val mainScreens = remember {
         listOf(
             NavItem(
@@ -265,7 +259,6 @@ fun AppScreen(
                 ) {
                     HorizontalFloatingToolbar(
                         expanded = true,
-                        scrollBehavior = toolbarScrollBehavior,
                         colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(
                             toolbarContainerColor = primaryContainer,
                             toolbarContentColor = onPrimaryContainer
@@ -316,8 +309,8 @@ fun AppScreen(
                                         Screen.Tasks.Main -> tasksViewModel.onAction(
                                             org.nsh07.pomodoro.ui.tasksScreen.viewModel.TasksAction.ShowAddDialog
                                         )
-                                        Screen.Collection.Main -> collectionViewModel.onAction(
-                                            CollectionAction.NavigateToAddNote
+                                        Screen.Collection.Main -> backStack.add(
+                                            Screen.Collection.AddNote
                                         )
                                         Screen.Records.Main -> {
                                             if (recordsState.selectedTab == 1) {
@@ -362,7 +355,7 @@ fun AppScreen(
                 }
             }
         },
-        modifier = modifier.nestedScroll(toolbarScrollBehavior)
+        modifier = modifier
     ) { contentPadding ->
         SharedTransitionLayout {
             NavDisplay(

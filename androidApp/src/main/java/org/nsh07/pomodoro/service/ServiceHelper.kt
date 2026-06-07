@@ -42,9 +42,9 @@ class AppServiceHelper(private val context: Context) : ServiceHelper {
                     context.startService(it)
                 }
 
-            is TimerAction.SkipTimer ->
+            TimerAction.EndSession ->
                 Intent(context, TimerService::class.java).also {
-                    it.action = TimerService.Actions.SKIP.toString()
+                    it.action = TimerService.Actions.END_SESSION.toString()
                     context.startService(it)
                 }
 

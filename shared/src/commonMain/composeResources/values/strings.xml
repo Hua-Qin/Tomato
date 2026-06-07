@@ -220,4 +220,16 @@
     <string name="add_item">Add</string>
     <string name="completed_tasks_count">Tasks done</string>
     <string name="counter_total_change">Counter changes</string>
+    <string name="end_session">End session</string>
+    <string name="timer_manager">Focus Plans</string>
+    <string name="timer_manager_desc">Manage your custom focus timers</string>
+    <string name="add_timer_plan">Add focus plan</string>
+    <string name="edit_timer_plan">Edit focus plan</string>
+    <string name="focus_duration">Focus duration</string>
+    <string name="short_break_duration">Short break</string>
+    <string name="long_break_duration">Long break</string>
+    <string name="alarm_enabled">Alarm</string>
+    <string name="vibrate_enabled">Vibration</string>
+    <string name="auto_start_next">Auto start next</string>
+    <string name="no_custom_timers">No custom focus plans yet</string>
 </resources>

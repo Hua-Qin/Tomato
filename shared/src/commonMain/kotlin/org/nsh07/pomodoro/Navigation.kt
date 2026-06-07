@@ -28,12 +28,16 @@ import tomato.shared.generated.resources.black_theme
 import tomato.shared.generated.resources.color_scheme
 import tomato.shared.generated.resources.dnd
 import tomato.shared.generated.resources.durations
+import tomato.shared.generated.resources.focus_duration
 import tomato.shared.generated.resources.media_volume_for_alarm
 import tomato.shared.generated.resources.palette
+import tomato.shared.generated.resources.short_break_duration
 import tomato.shared.generated.resources.sound
 import tomato.shared.generated.resources.theme
 import tomato.shared.generated.resources.timer
 import tomato.shared.generated.resources.timer_filled
+import tomato.shared.generated.resources.timer_manager
+import tomato.shared.generated.resources.timer_manager_desc
 import tomato.shared.generated.resources.vibrate
 
 val settingsScreens = listOf(
@@ -42,6 +46,12 @@ val settingsScreens = listOf(
         Res.drawable.timer_filled,
         Res.string.timer,
         listOf(Res.string.durations, Res.string.dnd, Res.string.always_on_display)
+    ),
+    SettingsNavItem(
+        Screen.Settings.TimerManager,
+        Res.drawable.timer_filled,
+        Res.string.timer_manager,
+        listOf(Res.string.timer_manager_desc, Res.string.focus_duration, Res.string.short_break_duration)
     ),
     SettingsNavItem(
         Screen.Settings.Alarm,

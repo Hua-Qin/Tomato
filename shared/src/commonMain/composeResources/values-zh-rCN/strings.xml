@@ -215,4 +215,16 @@
     <string name="add_item">添加</string>
     <string name="completed_tasks_count">完成任务</string>
     <string name="counter_total_change">计数器变化</string>
+    <string name="end_session">结束本次</string>
+    <string name="timer_manager">专注计划管理</string>
+    <string name="timer_manager_desc">管理你的自定义专注计时器</string>
+    <string name="add_timer_plan">新建专注计划</string>
+    <string name="edit_timer_plan">编辑专注计划</string>
+    <string name="focus_duration">专注时长</string>
+    <string name="short_break_duration">短休息时长</string>
+    <string name="long_break_duration">长休息时长</string>
+    <string name="alarm_enabled">响铃</string>
+    <string name="vibrate_enabled">振动</string>
+    <string name="auto_start_next">自动开始下一轮</string>
+    <string name="no_custom_timers">暂无自定义专注计划</string>
 </resources>

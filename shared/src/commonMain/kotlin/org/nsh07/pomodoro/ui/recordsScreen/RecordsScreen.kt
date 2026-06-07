@@ -29,6 +29,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
@@ -66,7 +68,9 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
@@ -87,6 +91,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
@@ -101,6 +107,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.nsh07.pomodoro.data.CounterRecord
+import org.nsh07.pomodoro.data.DailyTaskStat
 import org.nsh07.pomodoro.data.TimerSession
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsAction
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsState
@@ -109,6 +116,8 @@ import org.nsh07.pomodoro.ui.settingsScreen.viewModel.SettingsViewModel
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerMode
 import org.nsh07.pomodoro.ui.timerScreen.viewModel.TimerState
 import tomato.shared.generated.resources.Res
+import tomato.shared.generated.resources.arrow_back
+import tomato.shared.generated.resources.arrow_forward_big
 import tomato.shared.generated.resources.autoplay
 import tomato.shared.generated.resources.add
 import tomato.shared.generated.resources.add_counter
@@ -134,8 +143,8 @@ import tomato.shared.generated.resources.play_large
 import tomato.shared.generated.resources.restart
 import tomato.shared.generated.resources.restart_large
 import tomato.shared.generated.resources.short_break
-import tomato.shared.generated.resources.skip
-import tomato.shared.generated.resources.skip_next_large
+import tomato.shared.generated.resources.end_session
+import tomato.shared.generated.resources.stop
 import tomato.shared.generated.resources.statistics
 import tomato.shared.generated.resources.best_record
 import tomato.shared.generated.resources.today_tab
@@ -154,6 +163,8 @@ import tomato.shared.generated.resources.this_week
 import tomato.shared.generated.resources.today
 import tomato.shared.generated.resources.today_count
 import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -594,13 +605,13 @@ private fun TimerDisplay(
             Spacer(Modifier.width(16.dp))
 
             FilledTonalIconButton(
-                onClick = { onAction(RecordsAction.SkipTimer) },
+                onClick = { onAction(RecordsAction.EndSession) },
                 shapes = IconButtonDefaults.shapes(),
                 modifier = Modifier.size((48 * buttonScale).dp)
             ) {
                 Icon(
-                    painterResource(Res.drawable.skip_next_large),
-                    contentDescription = stringResource(Res.string.skip)
+                    painterResource(Res.drawable.stop),
+                    contentDescription = stringResource(Res.string.end_session)
                 )
             }
         }
@@ -873,6 +884,18 @@ private fun StatisticsTab(
             }
         }
 
+        // 日历卡片
+        item(contentType = "calendar") {
+            CalendarCard(
+                selectedDate = state.selectedCalendarDate,
+                calendarMonth = state.calendarMonth,
+                datesWithRecords = state.calendarDatesWithRecords,
+                dailyTaskStats = state.dailyTaskStats,
+                onSelectDate = { onAction(RecordsAction.SelectCalendarDate(it)) },
+                onChangeMonth = { onAction(RecordsAction.ChangeCalendarMonth(it)) }
+            )
+        }
+
         // 今日概览卡片
         item(contentType = "summary") {
             Row(
@@ -1042,6 +1065,181 @@ private fun StatisticsTab(
     }
 }
 
+@Composable
+private fun CalendarCard(
+    selectedDate: LocalDate,
+    calendarMonth: LocalDate,
+    datesWithRecords: Set<LocalDate>,
+    dailyTaskStats: List<DailyTaskStat>,
+    onSelectDate: (LocalDate) -> Unit,
+    onChangeMonth: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val today = LocalDate.now()
+    val yearMonth = YearMonth.from(calendarMonth)
+    val daysInMonth = yearMonth.lengthOfMonth()
+    val firstDayOfWeek = calendarMonth.withDayOfMonth(1).dayOfWeek.value - 1 // Monday=0
+
+    Surface(
+        shape = shapes.large,
+        color = colorScheme.surfaceBright,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // 月份标题 + 切换按钮
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                IconButton(
+                    onClick = { onChangeMonth(calendarMonth.minusMonths(1)) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        painterResource(Res.drawable.arrow_back),
+                        contentDescription = "Previous month",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Text(
+                    "${yearMonth.year}年${yearMonth.monthValue}月",
+                    style = typography.titleSmall,
+                    color = colorScheme.primary
+                )
+                IconButton(
+                    onClick = { onChangeMonth(calendarMonth.plusMonths(1)) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        painterResource(Res.drawable.arrow_forward_big),
+                        contentDescription = "Next month",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // 星期标题行
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                listOf("一", "二", "三", "四", "五", "六", "日").forEach { day ->
+                    Text(
+                        text = day,
+                        style = typography.labelSmall,
+                        color = colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            // 日期网格
+            val rows = ((firstDayOfWeek + daysInMonth + 6) / 7)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                for (row in 0 until rows) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        for (col in 0..6) {
+                            val dayIndex = row * 7 + col - firstDayOfWeek
+                            if (dayIndex in 0 until daysInMonth) {
+                                val date = calendarMonth.withDayOfMonth(dayIndex + 1)
+                                val isSelected = date == selectedDate
+                                val isToday = date == today
+                                val hasRecord = date in datesWithRecords
+
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                        .clip(CircleShape)
+                                        .background(
+                                            when {
+                                                isSelected -> colorScheme.primary
+                                                isToday -> colorScheme.primaryContainer
+                                                else -> Color.Transparent
+                                            }
+                                        )
+                                        .clickable { onSelectDate(date) }
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "${dayIndex + 1}",
+                                            style = typography.bodySmall,
+                                            color = when {
+                                                isSelected -> colorScheme.onPrimary
+                                                isToday -> colorScheme.onPrimaryContainer
+                                                else -> colorScheme.onSurface
+                                            }
+                                        )
+                                        if (hasRecord && !isSelected) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(4.dp)
+                                                    .clip(CircleShape)
+                                                    .background(colorScheme.primary)
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 选中日期的专注明细
+            if (dailyTaskStats.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider(color = colorScheme.outlineVariant)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "${selectedDate.monthValue}月${selectedDate.dayOfMonth}日 专注详情",
+                    style = typography.titleSmall,
+                    color = colorScheme.primary
+                )
+                Spacer(Modifier.height(4.dp))
+                dailyTaskStats.forEach { stat ->
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp)
+                    ) {
+                        Text(
+                            stat.timerName,
+                            style = typography.bodyMedium,
+                            color = colorScheme.onSurface
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                formatSessionDuration(stat.totalDuration),
+                                style = typography.bodyMedium,
+                                color = colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "${stat.sessionCount}次",
+                                style = typography.bodyMedium,
+                                color = colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 /** 简化的柱状图组件 */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -1075,6 +1273,11 @@ private fun SimpleColumnChart(
                     label = rememberTextComponent(typography.bodySmall.copy(colorScheme.onSurface)),
                     tick = null,
                     guideline = null,
+                    valueFormatter = CartesianValueFormatter { value, _ ->
+                        val minutes = value.toInt()
+                        if (minutes >= 60) "${minutes / 60}时${minutes % 60}分"
+                        else "${minutes}分"
+                    },
                     itemPlacer = VerticalAxis.ItemPlacer.count({ 4 })
                 ),
                 bottomAxis = HorizontalAxis.rememberBottom(
@@ -1134,8 +1337,8 @@ private fun SummaryCard(
 
 private fun formatSessionDuration(duration: Long): String {
     val minutes = duration / (60 * 1000)
-    return if (minutes >= 60) "${minutes / 60}h ${minutes % 60}m"
-    else "${minutes}m"
+    return if (minutes >= 60) "${minutes / 60}小时${minutes % 60}分钟"
+    else "${minutes}分钟"
 }
 
 private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")

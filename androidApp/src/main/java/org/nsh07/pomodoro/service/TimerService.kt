@@ -174,7 +174,7 @@ class TimerService : Service(), KoinComponent {
 
             Actions.UNDO_RESET.toString() -> undoReset()
 
-            Actions.SKIP.toString() -> skipScope.launch { skipTimer(true) }
+            Actions.END_SESSION.toString() -> skipScope.launch { endSession() }
 
             Actions.STOP_ALARM.toString() -> stopAlarm()
 
@@ -252,7 +252,7 @@ class TimerService : Service(), KoinComponent {
                     if (notificationUpdateCounter == 0) updateWidget()
 
                     if (time < 0) {
-                        skipTimer()
+                        advanceToNext()
                         _timerState.update { currentState ->
                             currentState.copy(timerRunning = false)
                         }
@@ -476,12 +476,12 @@ class TimerService : Service(), KoinComponent {
         _timerState.update { timerStateSnapshot.timerState }
     }
 
-    private suspend fun skipTimer(fromButton: Boolean = false) {
+    private suspend fun advanceToNext() {
         val settingsState = _settingsState.value
         saveTimeToDb()
         saveSessionToDb()
         updateProgressSegments()
-        showTimerNotification(0, paused = true, complete = !fromButton)
+        showTimerNotification(0, paused = true, complete = true)
         lastSavedDuration = 0
         startTime = 0L
         sessionStartWallTime = 0L
@@ -531,6 +531,44 @@ class TimerService : Service(), KoinComponent {
 
         updateProgressSegments()
         updateWidget()
+    }
+
+    private suspend fun endSession() {
+        val settingsState = _settingsState.value
+
+        // 停止计时
+        if (_timerState.value.timerRunning) {
+            _timerState.update { it.copy(timerRunning = false) }
+        }
+
+        // 保存当前数据
+        saveTimeToDb()
+        saveSessionToDb()
+        lastSavedDuration = 0
+        cycles = 0
+        startTime = 0L
+        sessionStartWallTime = 0L
+        pauseTime = 0L
+        pauseDuration = 0L
+
+        // 回到初始状态
+        time = settingsState.focusTime
+        _timerState.update { currentState ->
+            currentState.copy(
+                infiniteFocus = false,
+                timerMode = TimerMode.FOCUS,
+                timeStr = millisecondsToStr(settingsState.focusTime),
+                totalTime = settingsState.focusTime,
+                nextTimerMode = if (settingsState.sessionLength > 1) TimerMode.SHORT_BREAK else TimerMode.LONG_BREAK,
+                nextTimeStr = millisecondsToStr(if (settingsState.sessionLength > 1) settingsState.shortBreakTime else settingsState.longBreakTime),
+                currentFocusCount = 1,
+                totalFocusCount = settingsState.sessionLength,
+                elapsed = 0L
+            )
+        }
+
+        updateProgressSegments()
+        stopForegroundService()
     }
 
     fun startAlarm() {
@@ -672,7 +710,7 @@ class TimerService : Service(), KoinComponent {
 
     /**
      * Save a TimerSession record when a focus period ends.
-     * Only called from skipTimer() and resetTimer() for FOCUS mode.
+     * Only called from advanceToNext() and resetTimer() for FOCUS mode.
      */
     private suspend fun saveSessionToDb() {
         val timerState = _timerState.value
@@ -792,6 +830,6 @@ class TimerService : Service(), KoinComponent {
     }
 
     enum class Actions {
-        TOGGLE, SKIP, RESET, UNDO_RESET, STOP_ALARM, UPDATE_ALARM_TONE, SET_INFINITE_FOCUS
+        TOGGLE, END_SESSION, RESET, UNDO_RESET, STOP_ALARM, UPDATE_ALARM_TONE, SET_INFINITE_FOCUS
     }
 }

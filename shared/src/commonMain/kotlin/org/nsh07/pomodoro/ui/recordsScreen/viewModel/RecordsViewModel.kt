@@ -113,6 +113,21 @@ class RecordsViewModel(
                 ) }
             }.collect {}
         }
+
+        // 日历数据流
+        viewModelScope.launch(Dispatchers.IO) {
+            _state.flatMapLatest { state ->
+                combine(
+                    timerSessionRepository.getDailyTaskStats(state.selectedCalendarDate),
+                    timerSessionRepository.getDatesWithRecords(
+                        state.calendarMonth,
+                        state.calendarMonth.plusMonths(1).minusDays(1)
+                    )
+                ) { stats, dates -> Pair(stats, dates.toSet()) }
+            }.collect { (stats, dates) ->
+                _state.update { it.copy(dailyTaskStats = stats, calendarDatesWithRecords = dates) }
+            }
+        }
     }
 
     fun onAction(action: RecordsAction) {
@@ -132,10 +147,12 @@ class RecordsViewModel(
             is RecordsAction.SetStatsPeriod -> setStatsPeriod(action.period)
             is RecordsAction.ToggleTimer -> toggleTimer()
             is RecordsAction.ResetTimer -> resetTimer()
-            is RecordsAction.SkipTimer -> skipTimer()
+            is RecordsAction.EndSession -> endSession()
             is RecordsAction.StartInfiniteMode -> startInfiniteMode()
             is RecordsAction.ExitInfiniteMode -> exitInfiniteMode()
             is RecordsAction.EditTimerName -> editTimerName(action.timerId, action.newName)
+            is RecordsAction.SelectCalendarDate -> selectCalendarDate(action.date)
+            is RecordsAction.ChangeCalendarMonth -> changeCalendarMonth(action.month)
         }
     }
 
@@ -147,8 +164,8 @@ class RecordsViewModel(
         serviceHelper.startService(TimerAction.ResetTimer)
     }
 
-    private fun skipTimer() {
-        serviceHelper.startService(TimerAction.SkipTimer(fromButton = true))
+    private fun endSession() {
+        serviceHelper.startService(TimerAction.EndSession)
     }
 
     private fun startInfiniteMode() {
@@ -282,6 +299,14 @@ class RecordsViewModel(
 
     private fun setStatsPeriod(period: StatsPeriod) {
         _state.update { it.copy(statsPeriod = period) }
+    }
+
+    private fun selectCalendarDate(date: LocalDate) {
+        _state.update { it.copy(selectedCalendarDate = date) }
+    }
+
+    private fun changeCalendarMonth(month: LocalDate) {
+        _state.update { it.copy(calendarMonth = month) }
     }
 
     /** 根据统计周期计算起止日期 */

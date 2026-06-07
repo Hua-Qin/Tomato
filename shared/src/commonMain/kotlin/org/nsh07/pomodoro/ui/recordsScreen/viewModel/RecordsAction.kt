@@ -18,6 +18,7 @@
 package org.nsh07.pomodoro.ui.recordsScreen.viewModel
 
 import org.nsh07.pomodoro.data.CustomTimer
+import java.time.LocalDate
 
 sealed interface RecordsAction {
     data class SelectTab(val index: Int) : RecordsAction
@@ -35,8 +36,10 @@ sealed interface RecordsAction {
     data class SetStatsPeriod(val period: StatsPeriod) : RecordsAction
     data object ToggleTimer : RecordsAction
     data object ResetTimer : RecordsAction
-    data object SkipTimer : RecordsAction
+    data object EndSession : RecordsAction
     data object StartInfiniteMode : RecordsAction
     data object ExitInfiniteMode : RecordsAction
     data class EditTimerName(val timerId: Long, val newName: String) : RecordsAction
+    data class SelectCalendarDate(val date: LocalDate) : RecordsAction
+    data class ChangeCalendarMonth(val month: LocalDate) : RecordsAction
 }

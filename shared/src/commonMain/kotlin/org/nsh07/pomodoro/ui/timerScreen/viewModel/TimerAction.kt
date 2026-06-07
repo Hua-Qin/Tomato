@@ -18,7 +18,7 @@
 package org.nsh07.pomodoro.ui.timerScreen.viewModel
 
 sealed interface TimerAction {
-    data class SkipTimer(val fromButton: Boolean) : TimerAction
+    data object EndSession : TimerAction
     data class SetInfiniteFocus(val value: Boolean) : TimerAction
 
     data object ResetTimer : TimerAction

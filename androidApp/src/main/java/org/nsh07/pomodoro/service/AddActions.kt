@@ -55,13 +55,13 @@ fun NotificationCompat.Builder.addTimerActions(
         )
     )
     .addAction(
-        R.drawable.skip_next,
-        context.getString(R.string.skip),
+        R.drawable.stop,
+        context.getString(R.string.end_session),
         PendingIntent.getService(
             context,
             0,
             Intent(context, TimerService::class.java).also {
-                it.action = TimerService.Actions.SKIP.toString()
+                it.action = TimerService.Actions.END_SESSION.toString()
             },
             FLAG_IMMUTABLE
         )

@@ -49,9 +49,21 @@ interface TimerSessionDao {
 
     @Query("DELETE FROM timer_session WHERE id = :id")
     suspend fun deleteSessionById(id: Long)
+
+    @Query("SELECT timerName, SUM(actualDuration) as totalDuration, COUNT(*) as sessionCount FROM timer_session WHERE date = :date GROUP BY timerName ORDER BY totalDuration DESC")
+    fun getDailyTaskStats(date: LocalDate): Flow<List<DailyTaskStat>>
+
+    @Query("SELECT DISTINCT date FROM timer_session WHERE date >= :startDate AND date <= :endDate")
+    fun getDatesWithRecords(startDate: LocalDate, endDate: LocalDate): Flow<List<LocalDate>>
 }
 
 data class TimerDurationStat(
     val timerName: String,
     val totalDuration: Long
+)
+
+data class DailyTaskStat(
+    val timerName: String,
+    val totalDuration: Long,
+    val sessionCount: Int
 )

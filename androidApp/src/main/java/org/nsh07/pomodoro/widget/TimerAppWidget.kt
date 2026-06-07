@@ -160,10 +160,10 @@ class TimerAppWidget : GlanceAppWidget(), KoinComponent {
                             )
 
                         CircleIconButton(
-                            imageProvider = ImageProvider(R.drawable.skip_next),
-                            contentDescription = context.getString(R.string.skip_to_next),
+                            imageProvider = ImageProvider(R.drawable.stop),
+                            contentDescription = context.getString(R.string.end_session),
                             onClick = actionRunCallback<StartServiceAction>(
-                                actionParametersOf(key to TimerService.Actions.SKIP)
+                                actionParametersOf(key to TimerService.Actions.END_SESSION)
                             ),
                             backgroundColor = secondaryButtonColor,
                             contentColor = onSecondaryButtonColor

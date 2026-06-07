@@ -29,6 +29,8 @@ interface TimerSessionRepository {
     fun getSessionsBetweenDates(startDate: LocalDate, endDate: LocalDate): Flow<List<TimerSession>>
     fun getDurationByTimerName(startDate: LocalDate, endDate: LocalDate): Flow<List<TimerDurationStat>>
     fun getAllSessions(): Flow<List<TimerSession>>
+    fun getDailyTaskStats(date: LocalDate): Flow<List<DailyTaskStat>>
+    fun getDatesWithRecords(startDate: LocalDate, endDate: LocalDate): Flow<List<LocalDate>>
 }
 
 class AppTimerSessionRepository(
@@ -58,4 +60,8 @@ class AppTimerSessionRepository(
         timerSessionDao.getDurationByTimerName(startDate, endDate)
 
     override fun getAllSessions(): Flow<List<TimerSession>> = timerSessionDao.getAllSessions()
+
+    override fun getDailyTaskStats(date: LocalDate) = timerSessionDao.getDailyTaskStats(date)
+
+    override fun getDatesWithRecords(startDate: LocalDate, endDate: LocalDate) = timerSessionDao.getDatesWithRecords(startDate, endDate)
 }
