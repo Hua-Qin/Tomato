@@ -154,7 +154,8 @@ fun TimerManagerScreen(
                 FloatingActionButton(
                     onClick = { showAddDialog = true },
                     containerColor = colorScheme.primary,
-                    contentColor = colorScheme.onPrimary
+                    contentColor = colorScheme.onPrimary,
+                    modifier = Modifier.padding(bottom = contentPadding.calculateBottomPadding())
                 ) {
                     Icon(
                         painterResource(Res.drawable.add),
