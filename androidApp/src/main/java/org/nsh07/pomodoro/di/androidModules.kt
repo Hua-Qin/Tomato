@@ -49,6 +49,7 @@ import org.nsh07.pomodoro.data.StatRepository
 import org.nsh07.pomodoro.data.StateRepository
 import org.nsh07.pomodoro.data.TaskRepository
 import org.nsh07.pomodoro.data.TimerSessionRepository
+import org.nsh07.pomodoro.data.WidgetRefreshNotifier
 import org.nsh07.pomodoro.service.AppServiceHelper
 import org.nsh07.pomodoro.service.ServiceHelper
 import org.nsh07.pomodoro.service.TaskReminderScheduler
@@ -72,6 +73,8 @@ val servicesModule = module {
     single { NotificationManagerCompat.from(get()) }
     single { create(::createNotificationManager) }
     single { create(::createNotificationCompatBuilder) }
+
+    single<WidgetRefreshNotifier> { WidgetRefreshNotifierImpl(get()) }
 
     single<ActivityCallbacks>()
 }

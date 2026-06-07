@@ -22,11 +22,32 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.nsh07.pomodoro.R
+import org.nsh07.pomodoro.widget.HistoryAppWidget
+import org.nsh07.pomodoro.widget.TaskListAppWidget
+import org.nsh07.pomodoro.widget.TodayAppWidget
+import androidx.glance.appwidget.updateAll
 
 class TaskReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+            // Refresh widgets after device reboot
+            val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+            scope.launch {
+                try {
+                    TaskListAppWidget().updateAll(context)
+                    TodayAppWidget().updateAll(context)
+                    HistoryAppWidget().updateAll(context)
+                } catch (_: Exception) {}
+            }
+            return
+        }
+
         if (intent.action != TaskReminderScheduler.ACTION_SHOW_REMINDER) return
 
         val taskId = intent.getLongExtra(TaskReminderScheduler.EXTRA_TASK_ID, -1)

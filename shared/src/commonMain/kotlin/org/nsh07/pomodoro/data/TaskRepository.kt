@@ -43,18 +43,23 @@ interface TaskRepository {
 
 class AppTaskRepository(
     private val taskDao: TaskDao,
-    private val ioDispatcher: CoroutineDispatcher
+    private val ioDispatcher: CoroutineDispatcher,
+    private val widgetRefreshNotifier: WidgetRefreshNotifier? = null
 ) : TaskRepository {
     override suspend fun insertTask(task: Task): Long = withContext(ioDispatcher) {
-        taskDao.insertTask(task)
+        val result = taskDao.insertTask(task)
+        widgetRefreshNotifier?.notifyTaskDataChanged()
+        result
     }
 
     override suspend fun updateTask(task: Task) = withContext(ioDispatcher) {
         taskDao.updateTask(task)
+        widgetRefreshNotifier?.notifyTaskDataChanged()
     }
 
     override suspend fun deleteTask(task: Task) = withContext(ioDispatcher) {
         taskDao.deleteTask(task)
+        widgetRefreshNotifier?.notifyTaskDataChanged()
     }
 
     override fun getPendingTasks(): Flow<List<Task>> = taskDao.getPendingTasks()
@@ -89,12 +94,14 @@ class AppTaskRepository(
                 taskDao.insertTask(nextTask)
             }
         }
+        widgetRefreshNotifier?.notifyTaskDataChanged()
         task
     }
 
     override suspend fun uncompleteTask(taskId: Long) = withContext(ioDispatcher) {
         val task = taskDao.getTaskById(taskId) ?: return@withContext
         taskDao.updateTask(task.copy(isCompleted = false, completedAt = null))
+        widgetRefreshNotifier?.notifyTaskDataChanged()
     }
 
     override fun getPendingTaskCount(): Flow<Int> = taskDao.getPendingTaskCount()

@@ -35,10 +35,13 @@ interface TimerSessionRepository {
 
 class AppTimerSessionRepository(
     private val timerSessionDao: TimerSessionDao,
-    private val ioDispatcher: CoroutineDispatcher
+    private val ioDispatcher: CoroutineDispatcher,
+    private val widgetRefreshNotifier: WidgetRefreshNotifier? = null
 ) : TimerSessionRepository {
     override suspend fun insertSession(session: TimerSession): Long = withContext(ioDispatcher) {
-        timerSessionDao.insertSession(session)
+        val result = timerSessionDao.insertSession(session)
+        widgetRefreshNotifier?.notifyTimerDataChanged()
+        result
     }
 
     override fun getSessionsByDate(date: LocalDate): Flow<List<TimerSession>> =

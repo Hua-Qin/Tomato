@@ -394,6 +394,25 @@ private fun DurationTab(
             )
         }
 
+        // 周期切换 (本日/本周/本月)
+        item(contentType = "period_selector") {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                StatsPeriod.entries.forEachIndexed { index, period ->
+                    val label = when (period) {
+                        StatsPeriod.DAY -> stringResource(Res.string.today_tab)
+                        StatsPeriod.WEEK -> stringResource(Res.string.this_week)
+                        StatsPeriod.MONTH -> stringResource(Res.string.this_month)
+                    }
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index, StatsPeriod.entries.size),
+                        selected = state.statsPeriod == period,
+                        onClick = { onAction(RecordsAction.SetStatsPeriod(period)) },
+                        label = { Text(label, style = typography.labelSmall) }
+                    )
+                }
+            }
+        }
+
         // Today's sessions
         item(contentType = "session_header") {
             Text(
@@ -865,25 +884,6 @@ private fun StatisticsTab(
         contentPadding = PaddingValues(16.dp),
         modifier = modifier.fillMaxSize()
     ) {
-        // 周期切换 (本日/本周/本月)
-        item(contentType = "period_selector") {
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                StatsPeriod.entries.forEachIndexed { index, period ->
-                    val label = when (period) {
-                        StatsPeriod.DAY -> stringResource(Res.string.today_tab)
-                        StatsPeriod.WEEK -> stringResource(Res.string.this_week)
-                        StatsPeriod.MONTH -> stringResource(Res.string.this_month)
-                    }
-                    SegmentedButton(
-                        shape = SegmentedButtonDefaults.itemShape(index, StatsPeriod.entries.size),
-                        selected = state.statsPeriod == period,
-                        onClick = { onAction(RecordsAction.SetStatsPeriod(period)) },
-                        label = { Text(label, style = typography.labelSmall) }
-                    )
-                }
-            }
-        }
-
         // 日历卡片
         item(contentType = "calendar") {
             CalendarCard(

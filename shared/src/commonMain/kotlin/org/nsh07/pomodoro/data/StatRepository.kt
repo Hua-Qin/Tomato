@@ -53,9 +53,13 @@ interface StatRepository {
  */
 class AppStatRepository(
     private val statDao: StatDao,
-    private val ioDispatcher: CoroutineDispatcher
+    private val ioDispatcher: CoroutineDispatcher,
+    private val widgetRefreshNotifier: WidgetRefreshNotifier? = null
 ) : StatRepository {
-    override suspend fun insertStat(stat: Stat) = statDao.insertStat(stat)
+    override suspend fun insertStat(stat: Stat) {
+        statDao.insertStat(stat)
+        widgetRefreshNotifier?.notifyTimerDataChanged()
+    }
 
     override suspend fun addFocusTime(focusTime: Long) = withContext(ioDispatcher) {
         val currentDate = LocalDate.now()
@@ -98,6 +102,7 @@ class AppStatRepository(
                     )
             }
         }
+        widgetRefreshNotifier?.notifyTimerDataChanged()
     }
 
     override suspend fun addBreakTime(breakTime: Long) = withContext(ioDispatcher) {
@@ -107,6 +112,7 @@ class AppStatRepository(
         } else {
             statDao.insertStat(Stat(currentDate, 0, 0, 0, 0, breakTime))
         }
+        widgetRefreshNotifier?.notifyTimerDataChanged()
     }
 
     override fun getTodayStat(): Flow<Stat?> {
@@ -125,5 +131,8 @@ class AppStatRepository(
 
     override suspend fun getLastDate(): LocalDate? = statDao.getLastDate()
 
-    override suspend fun deleteAllStats() = statDao.clearAll()
+    override suspend fun deleteAllStats() {
+        statDao.clearAll()
+        widgetRefreshNotifier?.notifyTimerDataChanged()
+    }
 }
