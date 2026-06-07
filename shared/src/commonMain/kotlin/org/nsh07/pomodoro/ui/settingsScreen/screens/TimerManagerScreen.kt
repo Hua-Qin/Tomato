@@ -90,6 +90,7 @@ import tomato.shared.generated.resources.long_break_duration
 import tomato.shared.generated.resources.no_custom_timers
 import tomato.shared.generated.resources.session_length
 import tomato.shared.generated.resources.short_break_duration
+import tomato.shared.generated.resources.timer_filled
 import tomato.shared.generated.resources.timer_manager
 import tomato.shared.generated.resources.timer_name
 import tomato.shared.generated.resources.vibrate_enabled

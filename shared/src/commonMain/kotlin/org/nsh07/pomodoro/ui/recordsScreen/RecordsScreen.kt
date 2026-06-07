@@ -1273,7 +1273,7 @@ private fun SimpleColumnChart(
                     label = rememberTextComponent(typography.bodySmall.copy(colorScheme.onSurface)),
                     tick = null,
                     guideline = null,
-                    valueFormatter = CartesianValueFormatter { value, _ ->
+                    valueFormatter = CartesianValueFormatter { value, _, _ ->
                         val minutes = value.toInt()
                         if (minutes >= 60) "${minutes / 60}时${minutes % 60}分"
                         else "${minutes}分"
