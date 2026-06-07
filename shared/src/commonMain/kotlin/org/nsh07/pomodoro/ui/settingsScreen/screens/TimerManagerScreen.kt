@@ -60,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
@@ -121,6 +122,7 @@ fun TimerManagerScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(barColors.containerColor)
+            .padding(bottom = contentPadding.calculateBottomPadding())
     ) {
         Scaffold(
             topBar = {
@@ -154,8 +156,7 @@ fun TimerManagerScreen(
                 FloatingActionButton(
                     onClick = { showAddDialog = true },
                     containerColor = colorScheme.primary,
-                    contentColor = colorScheme.onPrimary,
-                    modifier = Modifier.padding(bottom = contentPadding.calculateBottomPadding())
+                    contentColor = colorScheme.onPrimary
                 ) {
                     Icon(
                         painterResource(Res.drawable.add),
@@ -168,7 +169,14 @@ fun TimerManagerScreen(
                 .widthIn(max = PANE_MAX_WIDTH)
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
         ) { innerPadding ->
-            val insets = mergePaddingValues(innerPadding, contentPadding)
+            // Bottom padding already applied to outer Box, so exclude it from contentPadding
+            val contentPaddingWithoutBottom = PaddingValues(
+                start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
+                top = contentPadding.calculateTopPadding(),
+                end = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
+                bottom = 0.dp
+            )
+            val insets = mergePaddingValues(innerPadding, contentPaddingWithoutBottom)
             if (timers.isEmpty()) {
                 Box(
                     modifier = Modifier

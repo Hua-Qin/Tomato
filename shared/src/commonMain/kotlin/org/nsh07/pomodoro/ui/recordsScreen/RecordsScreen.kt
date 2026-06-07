@@ -907,25 +907,6 @@ private fun StatisticsTab(
             }
         }
 
-        // 周期切换 (本日/本周/本月) - 专注时长统计上方
-        item(contentType = "period_selector") {
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                StatsPeriod.entries.forEachIndexed { index, period ->
-                    val label = when (period) {
-                        StatsPeriod.DAY -> stringResource(Res.string.today_tab)
-                        StatsPeriod.WEEK -> stringResource(Res.string.this_week)
-                        StatsPeriod.MONTH -> stringResource(Res.string.this_month)
-                    }
-                    SegmentedButton(
-                        shape = SegmentedButtonDefaults.itemShape(index, StatsPeriod.entries.size),
-                        selected = state.statsPeriod == period,
-                        onClick = { onAction(RecordsAction.SetStatsPeriod(period)) },
-                        label = { Text(label, style = typography.labelSmall) }
-                    )
-                }
-            }
-        }
-
         // 各计划今日时长
         if (state.timerDurationStats.isNotEmpty() || state.infiniteFocusElapsed > 0) {
             item(contentType = "plan_stats") {
@@ -977,6 +958,25 @@ private fun StatisticsTab(
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // 周期切换 (本日/本周/本月) - 专注时长统计上方
+        item(contentType = "period_selector") {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                StatsPeriod.entries.forEachIndexed { index, period ->
+                    val label = when (period) {
+                        StatsPeriod.DAY -> stringResource(Res.string.today_tab)
+                        StatsPeriod.WEEK -> stringResource(Res.string.this_week)
+                        StatsPeriod.MONTH -> stringResource(Res.string.this_month)
+                    }
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index, StatsPeriod.entries.size),
+                        selected = state.statsPeriod == period,
+                        onClick = { onAction(RecordsAction.SetStatsPeriod(period)) },
+                        label = { Text(label, style = typography.labelSmall) }
+                    )
                 }
             }
         }
