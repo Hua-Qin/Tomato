@@ -58,10 +58,10 @@ class AppStatRepository(
 ) : StatRepository {
     override suspend fun insertStat(stat: Stat) {
         statDao.insertStat(stat)
-        widgetRefreshNotifier?.notifyTimerDataChanged()
+        widgetRefreshNotifier?.notifyTimerDataChanged() ?: Unit
     }
 
-    override suspend fun addFocusTime(focusTime: Long) = withContext(ioDispatcher) {
+    override suspend fun addFocusTime(focusTime: Long): Unit = withContext(ioDispatcher) {
         val currentDate = LocalDate.now()
         val currentTime = LocalTime.now().toSecondOfDay()
         val secondsInDay = 24 * 60 * 60
@@ -102,17 +102,17 @@ class AppStatRepository(
                     )
             }
         }
-        widgetRefreshNotifier?.notifyTimerDataChanged()
+        widgetRefreshNotifier?.notifyTimerDataChanged() ?: Unit
     }
 
-    override suspend fun addBreakTime(breakTime: Long) = withContext(ioDispatcher) {
+    override suspend fun addBreakTime(breakTime: Long): Unit = withContext(ioDispatcher) {
         val currentDate = LocalDate.now()
         if (statDao.statExists(currentDate)) {
             statDao.addBreakTime(currentDate, breakTime)
         } else {
             statDao.insertStat(Stat(currentDate, 0, 0, 0, 0, breakTime))
         }
-        widgetRefreshNotifier?.notifyTimerDataChanged()
+        widgetRefreshNotifier?.notifyTimerDataChanged() ?: Unit
     }
 
     override fun getTodayStat(): Flow<Stat?> {
@@ -133,6 +133,6 @@ class AppStatRepository(
 
     override suspend fun deleteAllStats() {
         statDao.clearAll()
-        widgetRefreshNotifier?.notifyTimerDataChanged()
+        widgetRefreshNotifier?.notifyTimerDataChanged() ?: Unit
     }
 }
