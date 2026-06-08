@@ -227,4 +227,5 @@
     <string name="vibrate_enabled">振动</string>
     <string name="auto_start_next">自动开始下一轮</string>
     <string name="no_custom_timers">暂无自定义专注计划</string>
+    <string name="no_focus_plans_hint">暂无专注计划，点击添加开始使用</string>
 </resources>

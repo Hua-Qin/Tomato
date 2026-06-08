@@ -156,9 +156,11 @@ import tomato.shared.generated.resources.delete_timer
 import tomato.shared.generated.resources.edit_timer_name
 import tomato.shared.generated.resources.focused_for
 import tomato.shared.generated.resources.add_item
+import tomato.shared.generated.resources.add_timer_plan
 import tomato.shared.generated.resources.completed_tasks_count
 import tomato.shared.generated.resources.counter_total_change
 import tomato.shared.generated.resources.this_month
+import tomato.shared.generated.resources.no_focus_plans_hint
 import tomato.shared.generated.resources.this_week
 import tomato.shared.generated.resources.today
 import tomato.shared.generated.resources.today_count
@@ -282,104 +284,112 @@ private fun DurationTab(
     ) {
         // Timer type chips
         item(contentType = "timer_chips") {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp)
-            ) {
-                // Default timer chip
-                item(contentType = "timer_chip") {
-                    val defaultSelected = state.activeTimerId == null
-                    FilterChip(
-                        selected = defaultSelected,
-                        onClick = { /* Select default timer */ },
-                        label = { Text(state.timerState.activeTimerName) },
-                        leadingIcon = if (defaultSelected) {
-                            {
-                                Icon(
-                                    painterResource(Res.drawable.check),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+            if (state.customTimers.isEmpty()) {
+                // 空状态提示
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp)
+                ) {
+                    Text(
+                        stringResource(Res.string.no_focus_plans_hint),
+                        style = typography.bodyMedium,
+                        color = colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    FilledTonalButton(onClick = { onAction(RecordsAction.ShowAddTimerSheet) }) {
+                        Icon(
+                            painterResource(Res.drawable.add),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(Res.string.add_timer_plan))
+                    }
+                }
+            } else {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp)
+                ) {
+                    items(state.customTimers, key = { it.id }, contentType = { "timer_chip" }) { timer ->
+                        val selected = state.activeTimerId == timer.id
+                        var showMenu by remember { mutableStateOf(false) }
+                        var showEditDialog by remember { mutableStateOf(false) }
+                        var editName by remember { mutableStateOf(timer.name) }
+                        val haptic = LocalHapticFeedback.current
+
+                        Box {
+                            FilterChip(
+                                selected = selected,
+                                onClick = { onAction(RecordsAction.SelectTimer(timer.id)) },
+                                label = { Text(timer.name) },
+                                leadingIcon = if (selected) {
+                                    {
+                                        Icon(
+                                            painterResource(Res.drawable.check),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                        )
+                                    }
+                                } else null,
+                                modifier = Modifier.combinedClickable(
+                                    onClick = { onAction(RecordsAction.SelectTimer(timer.id)) },
+                                    onLongClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        showMenu = true
+                                    }
+                                )
+                            )
+
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(Res.string.edit_name)) },
+                                    onClick = {
+                                        showMenu = false
+                                        editName = timer.name
+                                        showEditDialog = true
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(Res.string.delete_timer)) },
+                                    onClick = {
+                                        showMenu = false
+                                        onAction(RecordsAction.DeleteCustomTimer(timer.id))
+                                    }
                                 )
                             }
-                        } else null
-                    )
-                }
+                        }
 
-                items(state.customTimers, key = { it.id }, contentType = { "timer_chip" }) { timer ->
-                    val selected = state.activeTimerId == timer.id
-                    var showMenu by remember { mutableStateOf(false) }
-                    var showEditDialog by remember { mutableStateOf(false) }
-                    var editName by remember { mutableStateOf(timer.name) }
-                    val haptic = LocalHapticFeedback.current
-
-                    Box {
-                        FilterChip(
-                            selected = selected,
-                            onClick = { onAction(RecordsAction.SelectTimer(timer.id)) },
-                            label = { Text(timer.name) },
-                            leadingIcon = if (selected) {
-                                {
-                                    Icon(
-                                        painterResource(Res.drawable.check),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        if (showEditDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showEditDialog = false },
+                                title = { Text(stringResource(Res.string.edit_timer_name)) },
+                                text = {
+                                    OutlinedTextField(
+                                        value = editName,
+                                        onValueChange = { editName = it },
+                                        singleLine = true
                                     )
-                                }
-                            } else null,
-                            modifier = Modifier.combinedClickable(
-                                onClick = { onAction(RecordsAction.SelectTimer(timer.id)) },
-                                onLongClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    showMenu = true
-                                }
-                            )
-                        )
-
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.edit_name)) },
-                                onClick = {
-                                    showMenu = false
-                                    editName = timer.name
-                                    showEditDialog = true
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.delete_timer)) },
-                                onClick = {
-                                    showMenu = false
-                                    onAction(RecordsAction.DeleteCustomTimer(timer.id))
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        if (editName.isNotBlank()) {
+                                            onAction(RecordsAction.EditTimerName(timer.id, editName))
+                                        }
+                                        showEditDialog = false
+                                    }) { Text(stringResource(Res.string.ok)) }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showEditDialog = false }) { Text(stringResource(Res.string.cancel)) }
                                 }
                             )
                         }
-                    }
-
-                    if (showEditDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showEditDialog = false },
-                            title = { Text(stringResource(Res.string.edit_timer_name)) },
-                            text = {
-                                OutlinedTextField(
-                                    value = editName,
-                                    onValueChange = { editName = it },
-                                    singleLine = true
-                                )
-                            },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    if (editName.isNotBlank()) {
-                                        onAction(RecordsAction.EditTimerName(timer.id, editName))
-                                    }
-                                    showEditDialog = false
-                                }) { Text(stringResource(Res.string.ok)) }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showEditDialog = false }) { Text(stringResource(Res.string.cancel)) }
-                            }
-                        )
                     }
                 }
             }

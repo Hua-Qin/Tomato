@@ -232,4 +232,5 @@
     <string name="vibrate_enabled">Vibration</string>
     <string name="auto_start_next">Auto start next</string>
     <string name="no_custom_timers">No custom focus plans yet</string>
+    <string name="no_focus_plans_hint">No focus plans yet. Add one to get started</string>
 </resources>

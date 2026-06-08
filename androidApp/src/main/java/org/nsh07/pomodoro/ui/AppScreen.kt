@@ -283,7 +283,9 @@ fun AppScreen(
 
                         // Center FAB
                         val currentScreen = backStack.lastOrNull()
-                        val showFab = currentScreen != Screen.Settings.Main
+                        // 仅在任务页、收集页、次数记录页显示FAB；时长记录页和统计页不显示
+                        val showFab = currentScreen != Screen.Settings.Main &&
+                                (currentScreen != Screen.Records.Main || recordsState.selectedTab == 1)
                         AnimatedVisibility(
                             visible = showFab,
                             enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + fadeIn(),
@@ -299,11 +301,7 @@ fun AppScreen(
                                             Screen.Collection.AddNote
                                         )
                                         Screen.Records.Main -> {
-                                            if (recordsState.selectedTab == 1) {
-                                                recordsViewModel.onAction(RecordsAction.ShowAddCounterSheet)
-                                            } else {
-                                                recordsViewModel.onAction(RecordsAction.ShowAddTimerSheet)
-                                            }
+                                            recordsViewModel.onAction(RecordsAction.ShowAddCounterSheet)
                                         }
                                         else -> {}
                                     }
