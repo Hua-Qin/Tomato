@@ -19,6 +19,7 @@ package org.nsh07.pomodoro.data
 
 import androidx.compose.runtime.Immutable
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.time.LocalDate
 
@@ -32,7 +33,7 @@ data class CounterRecord(
 )
 
 @Immutable
-@Entity(tableName = "counter_entry")
+@Entity(tableName = "counter_entry", indices = [Index(value = ["counterId", "date"], unique = true)])
 data class CounterEntry(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val counterId: Long,

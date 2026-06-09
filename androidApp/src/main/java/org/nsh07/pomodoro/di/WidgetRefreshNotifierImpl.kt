@@ -49,4 +49,13 @@ class WidgetRefreshNotifierImpl(
             } catch (_: Exception) {}
         }
     }
+
+    override fun notifyCounterDataChanged() {
+        scope.launch {
+            try {
+                TodayAppWidget().updateAll(context)
+                HistoryAppWidget().updateAll(context)
+            } catch (_: Exception) {}
+        }
+    }
 }

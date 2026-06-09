@@ -36,7 +36,8 @@ interface CounterRecordRepository {
 
 class AppCounterRecordRepository(
     private val counterRecordDao: CounterRecordDao,
-    private val ioDispatcher: CoroutineDispatcher
+    private val ioDispatcher: CoroutineDispatcher,
+    private val widgetRefreshNotifier: WidgetRefreshNotifier? = null
 ) : CounterRecordRepository {
     override suspend fun insertCounterRecord(record: CounterRecord): Long =
         withContext(ioDispatcher) {
@@ -63,6 +64,7 @@ class AppCounterRecordRepository(
                     CounterEntry(counterId = counterId, date = date, count = 1)
                 )
             }
+            widgetRefreshNotifier?.notifyCounterDataChanged() ?: Unit
         }
 
     override suspend fun decrementCounter(counterId: Long, date: LocalDate): Unit =
@@ -71,6 +73,7 @@ class AppCounterRecordRepository(
             if (existing != null && existing.count > 0) {
                 counterRecordDao.updateCounterEntry(existing.copy(count = existing.count - 1))
             }
+            widgetRefreshNotifier?.notifyCounterDataChanged() ?: Unit
         }
 
     override fun getEntryByCounterAndDate(

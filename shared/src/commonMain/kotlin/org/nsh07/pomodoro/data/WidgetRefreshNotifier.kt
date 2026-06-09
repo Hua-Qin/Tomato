@@ -20,4 +20,5 @@ package org.nsh07.pomodoro.data
 interface WidgetRefreshNotifier {
     fun notifyTaskDataChanged()
     fun notifyTimerDataChanged()
+    fun notifyCounterDataChanged()
 }
