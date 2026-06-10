@@ -21,6 +21,15 @@ import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Add unique index on counter_entry(counterId, date)
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_counter_entry_counterId_date` ON `counter_entry` (`counterId`, `date`)")
+    }
+}
 
 @Database(
     entities = [
@@ -31,8 +40,7 @@ import androidx.room.TypeConverters
     version = 4,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
-        AutoMigration(from = 2, to = 3),
-        AutoMigration(from = 3, to = 4)
+        AutoMigration(from = 2, to = 3)
     ]
 )
 @TypeConverters(Converters::class)

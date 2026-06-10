@@ -27,6 +27,7 @@ import org.koin.plugin.module.dsl.viewModel
 import org.nsh07.pomodoro.data.AndroidBackupRestoreManager
 import org.nsh07.pomodoro.data.AppDatabase
 import org.nsh07.pomodoro.data.BackupRestoreManager
+import org.nsh07.pomodoro.data.MIGRATION_3_4
 import org.nsh07.pomodoro.ui.collectionScreen.viewModel.CollectionViewModel
 import org.nsh07.pomodoro.ui.recordsScreen.viewModel.RecordsViewModel
 import org.nsh07.pomodoro.ui.settingsScreen.screens.backupRestore.viewModel.BackupRestoreViewModel
@@ -64,6 +65,7 @@ private fun createDatabase(context: Context): AppDatabase {
         context,
         AppDatabase::class.java,
         "app_database"
-    ).fallbackToDestructiveMigration()
+    ).addMigrations(MIGRATION_3_4)
+        .fallbackToDestructiveMigration()
         .build()
 }
