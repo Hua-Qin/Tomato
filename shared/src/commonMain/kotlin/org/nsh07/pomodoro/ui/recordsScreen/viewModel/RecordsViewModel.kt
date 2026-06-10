@@ -43,6 +43,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class RecordsViewModel(
     private val customTimerRepository: CustomTimerRepository,
     private val timerSessionRepository: TimerSessionRepository,
@@ -58,7 +59,6 @@ class RecordsViewModel(
 
     private val todayCounterEntries = counterRecordRepository.getEntriesByDate(LocalDate.now())
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     init {
         // 核心数据流：计时器、计数器、今日会话
         // 注意：不直接 combine timerState，而是只提取需要的字段，避免计时器高频 emit 触发全量更新
