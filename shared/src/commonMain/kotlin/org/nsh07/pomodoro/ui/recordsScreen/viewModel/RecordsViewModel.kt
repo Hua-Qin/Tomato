@@ -20,6 +20,7 @@ package org.nsh07.pomodoro.ui.recordsScreen.viewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -57,6 +58,7 @@ class RecordsViewModel(
 
     private val todayCounterEntries = counterRecordRepository.getEntriesByDate(LocalDate.now())
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     init {
         // 核心数据流：计时器、计数器、今日会话
         // 注意：不直接 combine timerState，而是只提取需要的字段，避免计时器高频 emit 触发全量更新

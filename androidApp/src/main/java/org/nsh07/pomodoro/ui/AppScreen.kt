@@ -20,6 +20,7 @@ package org.nsh07.pomodoro.ui
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -363,18 +364,19 @@ fun AppScreen(
         },
         modifier = modifier
     ) { contentPadding ->
-        NavDisplay(
-            backStack = backStack,
-            onBack = backStack::onBack,
-            transitionSpec = {
-                fadeIn(tween(200)) togetherWith fadeOut(tween(150))
-            },
-            popTransitionSpec = {
-                fadeIn(tween(200)) togetherWith fadeOut(tween(150))
-            },
-            predictivePopTransitionSpec = {
-                fadeIn(tween(200)) togetherWith fadeOut(tween(150))
-            },
+        SharedTransitionLayout {
+            NavDisplay(
+                backStack = backStack,
+                onBack = backStack::onBack,
+                transitionSpec = {
+                    fadeIn(tween(200)) togetherWith fadeOut(tween(150))
+                },
+                popTransitionSpec = {
+                    fadeIn(tween(200)) togetherWith fadeOut(tween(150))
+                },
+                predictivePopTransitionSpec = {
+                    fadeIn(tween(200)) togetherWith fadeOut(tween(150))
+                },
                 entryProvider = entryProvider {
                     entry<Screen.Tasks.Main> {
                         TasksScreen(
@@ -436,6 +438,7 @@ fun AppScreen(
                     }
                 }
             )
+        }
     }
 
     AnimatedVisibility(
