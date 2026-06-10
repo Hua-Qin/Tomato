@@ -39,6 +39,15 @@ actual data class FileLocator(val uri: Uri?) {
         get() = uri == null
 }
 
+actual fun FileLocator.fromPath(path: String): FileLocator {
+    val uri = if (path.startsWith("content://") || path.startsWith("file://")) {
+        Uri.parse(path)
+    } else {
+        Uri.fromFile(File(path))
+    }
+    return FileLocator(uri)
+}
+
 class AndroidBackupRestoreManager(
     private val database: AppDatabase,
     private val systemDao: SystemDao,
@@ -51,21 +60,36 @@ class AndroidBackupRestoreManager(
             val dbName = "app_database"
             val dbFile = context.getDatabasePath(dbName)
 
-            val documentId = DocumentsContract.getTreeDocumentId(directoryLocator.uri)
-            val parentDocumentUri =
-                DocumentsContract.buildDocumentUriUsingTree(directoryLocator.uri, documentId)
+            val uri = directoryLocator.uri ?: return@withContext
 
-            val fileUri = DocumentsContract.createDocument(
-                context.contentResolver,
-                parentDocumentUri,
-                "application/octet-stream", // MIME type
-                "tomato-backup-${Clock.System.now()}.db"
-            )
-
-            fileUri?.let {
-                context.contentResolver.openOutputStream(it)?.use { output ->
-                    FileInputStream(dbFile).use { input ->
+            if (uri.scheme == "file") {
+                // 文件路径模式：直接复制到目标目录
+                val dir = File(uri.path!!)
+                if (!dir.exists()) dir.mkdirs()
+                val backupFile = File(dir, "tomato-backup-${Clock.System.now()}.db")
+                FileInputStream(dbFile).use { input ->
+                    FileOutputStream(backupFile).use { output ->
                         input.copyTo(output)
+                    }
+                }
+            } else {
+                // SAF 模式：通过 ContentResolver
+                val documentId = DocumentsContract.getTreeDocumentId(uri)
+                val parentDocumentUri =
+                    DocumentsContract.buildDocumentUriUsingTree(uri, documentId)
+
+                val fileUri = DocumentsContract.createDocument(
+                    context.contentResolver,
+                    parentDocumentUri,
+                    "application/octet-stream",
+                    "tomato-backup-${Clock.System.now()}.db"
+                )
+
+                fileUri?.let {
+                    context.contentResolver.openOutputStream(it)?.use { output ->
+                        FileInputStream(dbFile).use { input ->
+                            input.copyTo(output)
+                        }
                     }
                 }
             }
@@ -85,9 +109,22 @@ class AndroidBackupRestoreManager(
             File("${dbFile.path}-wal").delete()
             File("${dbFile.path}-shm").delete()
 
-            context.contentResolver.openInputStream(fileLocator.uri!!)?.use { input ->
-                FileOutputStream(dbFile).use { output ->
-                    input.copyTo(output)
+            val uri = fileLocator.uri!!
+
+            if (uri.scheme == "file") {
+                // 文件路径模式：直接复制
+                val sourceFile = File(uri.path!!)
+                FileInputStream(sourceFile).use { input ->
+                    FileOutputStream(dbFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            } else {
+                // SAF 模式：通过 ContentResolver
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(dbFile).use { output ->
+                        input.copyTo(output)
+                    }
                 }
             }
         }

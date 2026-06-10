@@ -145,6 +145,10 @@
     <string name="restore_dialog_desc">Your stats and settings will be restored from the chosen backup file. The app will need to be restarted when the restore is complete. &lt;b>All existing data will be erased, and this cannot be undone.&lt;/b></string>
     <string name="choose_folder">Choose folder</string>
     <string name="choose_file">Choose file</string>
+    <string name="or_enter_path">Or enter path manually</string>
+    <string name="manual_path_hint">File path</string>
+    <string name="backup_path_hint">Directory path to save backup</string>
+    <string name="restore_path_hint">Backup file path to restore</string>
     <string name="restart_app">Restart app</string>
     <string name="vibration_pattern">Vibration pattern</string>
     <string name="infinite">Infinite</string>

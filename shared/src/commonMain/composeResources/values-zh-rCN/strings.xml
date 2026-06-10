@@ -140,6 +140,10 @@
     <string name="restore_dialog_desc">您的统计数据和设置将从所选的备份文件中恢复。恢复完成后，应用程序需要重新启动。 <b>所有现有数据将被删除，且无法撤销。</b></string>
     <string name="choose_folder">选择文件夹</string>
     <string name="choose_file">选择文件</string>
+    <string name="or_enter_path">或手动输入路径</string>
+    <string name="manual_path_hint">文件路径</string>
+    <string name="backup_path_hint">备份保存目录路径</string>
+    <string name="restore_path_hint">要恢复的备份文件路径</string>
     <string name="restart_app">重启应用</string>
     <string name="vibration_pattern">振动模式</string>
     <string name="infinite">无限</string>

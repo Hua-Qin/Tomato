@@ -40,11 +40,15 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,12 +59,15 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.nsh07.pomodoro.data.FileLocator
+import org.nsh07.pomodoro.data.fromPath
 import org.nsh07.pomodoro.ui.settingsScreen.screens.backupRestore.viewModel.BackupRestoreState
 import org.nsh07.pomodoro.ui.theme.LocalAppFonts
 import tomato.shared.generated.resources.Res
 import tomato.shared.generated.resources.cancel
 import tomato.shared.generated.resources.check
 import tomato.shared.generated.resources.folder
+import tomato.shared.generated.resources.manual_path_hint
+import tomato.shared.generated.resources.or_enter_path
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -75,9 +82,11 @@ fun BackupBottomSheetTemplate(
     labelText: AnnotatedString,
     buttonText: String,
     selectedFileLocator: FileLocator,
+    pathHint: String,
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
+    var manualPath by remember { mutableStateOf("") }
 
     val animatedBgColor by animateColorAsState(
         targetValue = when (backupState) {
@@ -88,6 +97,12 @@ fun BackupBottomSheetTemplate(
     )
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    val effectiveLocator = if (manualPath.isNotBlank()) {
+        FileLocator().fromPath(manualPath.trim())
+    } else {
+        selectedFileLocator
+    }
 
     ModalBottomSheet(
         onDismissRequest = {
@@ -116,12 +131,16 @@ fun BackupBottomSheetTemplate(
                 fontFamily = LocalAppFonts.current.annotatedString,
                 color = colorScheme.onSurfaceVariant
             )
+            // 文件选择器按钮
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clip(RoundedCornerShape(40.dp))
                     .clickable(
-                        onClick = { openPicker() },
+                        onClick = {
+                            manualPath = ""
+                            openPicker()
+                        },
                         enabled = backupState == BackupRestoreState.CHOOSE_FILE
                     )
                     .drawBehind { drawRect(animatedBgColor) }
@@ -166,11 +185,29 @@ fun BackupBottomSheetTemplate(
                 }
 
                 Text(
-                    selectedFileLocator.path?.substringAfter(':')
-                        ?: buttonText,
+                    if (manualPath.isBlank()) selectedFileLocator.path?.substringAfter(':')
+                        ?: buttonText
+                    else manualPath,
                     style = typography.bodyMedium,
                     color = colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
+
+            // 手动路径输入
+            if (backupState == BackupRestoreState.CHOOSE_FILE) {
+                Text(
+                    stringResource(Res.string.or_enter_path),
+                    style = typography.labelMedium,
+                    color = colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = manualPath,
+                    onValueChange = { manualPath = it },
+                    label = { Text(pathHint) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = shapes.large
                 )
             }
 
@@ -196,8 +233,13 @@ fun BackupBottomSheetTemplate(
                                 resetBackupState()
                                 onDismissRequest()
                             }
-                        } else if (selectedFileLocator.isNull) openPicker()
-                        else onStartAction(selectedFileLocator)
+                        } else if (effectiveLocator.isNull) {
+                            if (manualPath.isNotBlank()) {
+                                onStartAction(effectiveLocator)
+                            } else {
+                                openPicker()
+                            }
+                        } else onStartAction(effectiveLocator)
                     },
                     enabled = backupState != BackupRestoreState.LOADING,
                     shapes = ButtonDefaults.shapes()

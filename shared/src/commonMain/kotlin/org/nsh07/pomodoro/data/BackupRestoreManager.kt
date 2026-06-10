@@ -35,6 +35,12 @@ expect class FileLocator {
     val isNull: Boolean
 }
 
+/**
+ * Create a FileLocator from a file system path string.
+ * On Android, this creates a Uri from the file path using Uri.fromFile() or Uri.parse().
+ */
+expect fun FileLocator.fromPath(path: String): FileLocator
+
 interface BackupRestoreManager {
     suspend fun performBackup(directoryLocator: FileLocator)
     suspend fun performRestore(fileLocator: FileLocator)

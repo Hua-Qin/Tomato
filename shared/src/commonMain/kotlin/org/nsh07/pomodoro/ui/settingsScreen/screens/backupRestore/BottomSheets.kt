@@ -40,6 +40,7 @@ import tomato.shared.generated.resources.backup
 import tomato.shared.generated.resources.backup_40dp
 import tomato.shared.generated.resources.backup_and_restore
 import tomato.shared.generated.resources.backup_dialog_desc
+import tomato.shared.generated.resources.backup_path_hint
 import tomato.shared.generated.resources.choose_file
 import tomato.shared.generated.resources.choose_folder
 import tomato.shared.generated.resources.exit
@@ -47,6 +48,7 @@ import tomato.shared.generated.resources.restart_app
 import tomato.shared.generated.resources.restore
 import tomato.shared.generated.resources.restore_40dp
 import tomato.shared.generated.resources.restore_dialog_desc
+import tomato.shared.generated.resources.restore_path_hint
 import tomato.shared.generated.resources.settings
 import kotlin.text.Typography.nbsp
 
@@ -91,6 +93,7 @@ fun BackupBottomSheet(
         else if (selectedFileLocator.isNull) stringResource(Res.string.choose_folder)
         else stringResource(Res.string.backup),
         selectedFileLocator = selectedFileLocator,
+        pathHint = stringResource(Res.string.backup_path_hint),
         modifier = modifier
     )
 }
@@ -129,6 +132,7 @@ fun RestoreBottomSheet(
         else if (selectedFileLocator.isNull) stringResource(Res.string.choose_file)
         else stringResource(Res.string.restore),
         selectedFileLocator = selectedFileLocator,
+        pathHint = stringResource(Res.string.restore_path_hint),
         modifier = modifier
     )
 }
