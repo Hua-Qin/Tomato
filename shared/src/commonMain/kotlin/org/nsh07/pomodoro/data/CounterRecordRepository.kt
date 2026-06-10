@@ -56,10 +56,8 @@ class AppCounterRecordRepository(
 
     override suspend fun incrementCounter(counterId: Long, date: LocalDate): Unit =
         withContext(ioDispatcher) {
-            val existing = counterRecordDao.getEntryByCounterAndDateSync(counterId, date)
-            if (existing != null) {
-                counterRecordDao.updateCounterEntry(existing.copy(count = existing.count + 1))
-            } else {
+            val rowsAffected = counterRecordDao.incrementCounterEntryCount(counterId, date)
+            if (rowsAffected == 0) {
                 counterRecordDao.insertCounterEntry(
                     CounterEntry(counterId = counterId, date = date, count = 1)
                 )
@@ -69,10 +67,7 @@ class AppCounterRecordRepository(
 
     override suspend fun decrementCounter(counterId: Long, date: LocalDate): Unit =
         withContext(ioDispatcher) {
-            val existing = counterRecordDao.getEntryByCounterAndDateSync(counterId, date)
-            if (existing != null && existing.count > 0) {
-                counterRecordDao.updateCounterEntry(existing.copy(count = existing.count - 1))
-            }
+            counterRecordDao.decrementCounterEntryCount(counterId, date)
             widgetRefreshNotifier?.notifyCounterDataChanged() ?: Unit
         }
 

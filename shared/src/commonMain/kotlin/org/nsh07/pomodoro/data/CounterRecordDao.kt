@@ -54,6 +54,12 @@ interface CounterRecordDao {
     @Query("SELECT * FROM counter_entry WHERE counterId = :counterId AND date = :date")
     fun getEntryByCounterAndDate(counterId: Long, date: LocalDate): Flow<CounterEntry?>
 
+    @Query("UPDATE counter_entry SET count = count + 1 WHERE counterId = :counterId AND date = :date")
+    suspend fun incrementCounterEntryCount(counterId: Long, date: LocalDate): Int
+
+    @Query("UPDATE counter_entry SET count = count - 1 WHERE counterId = :counterId AND date = :date AND count > 0")
+    suspend fun decrementCounterEntryCount(counterId: Long, date: LocalDate): Int
+
     @Query("SELECT * FROM counter_entry WHERE counterId = :counterId AND date = :date")
     suspend fun getEntryByCounterAndDateSync(counterId: Long, date: LocalDate): CounterEntry?
 
