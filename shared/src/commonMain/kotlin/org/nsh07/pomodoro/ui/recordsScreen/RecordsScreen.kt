@@ -800,8 +800,11 @@ private fun StatisticsTab(
     val countModelProducer = remember { CartesianChartModelProducer() }
     val counterModelProducer = remember { CartesianChartModelProducer() }
 
+    // 无限模式时长只取分钟级精度，避免每秒触发图表重绘
+    val infiniteMinutes = (state.infiniteFocusElapsed / 60000).coerceAtLeast(0L)
+
     // 根据周期计算图表数据
-    val chartData = remember(state.periodSessions, state.statsPeriod, state.infiniteFocusElapsed) {
+    val chartData = remember(state.periodSessions, state.statsPeriod, state.todayStat, infiniteMinutes) {
         when (state.statsPeriod) {
             StatsPeriod.DAY -> {
                 // 按小时分组 (Q1: 0-6, Q2: 6-12, Q3: 12-18, Q4: 18-24)
@@ -810,11 +813,11 @@ private fun StatisticsTab(
                 val durations = if (stat != null) listOf(
                     stat.focusTimeQ1, stat.focusTimeQ2, stat.focusTimeQ3, stat.focusTimeQ4
                 ) else listOf(0L, 0L, 0L, 0L)
-                // 累加无限模式实时时长到当前季度
-                val adjustedDurations = if (state.infiniteFocusElapsed > 0) {
+                // 累加无限模式实时时长到当前季度（分钟级精度）
+                val adjustedDurations = if (infiniteMinutes > 0) {
                     val currentQuarter = java.time.LocalTime.now().hour / 6
                     durations.mapIndexed { index, d ->
-                        if (index == currentQuarter) d + state.infiniteFocusElapsed else d
+                        if (index == currentQuarter) d + infiniteMinutes * 60000 else d
                     }
                 } else durations
                 val counts = MutableList(4) { 0 }

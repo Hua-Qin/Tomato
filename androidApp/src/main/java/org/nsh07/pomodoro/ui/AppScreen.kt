@@ -18,9 +18,8 @@
 package org.nsh07.pomodoro.ui
 
 import android.content.Intent
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -76,6 +75,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -149,6 +150,17 @@ fun AppScreen(
     val tasksState by tasksViewModel.tasksState.collectAsStateWithLifecycle()
     val progress by timerViewModel.progress.collectAsStateWithLifecycle()
 
+    // 底部栏只需要 timerMode，避免计时器高频 emit 导致底部栏 recompose
+    val timerMode by remember(timerViewModel) {
+        timerViewModel.timerState.map { it.timerMode }.distinctUntilChanged()
+    }.collectAsStateWithLifecycle(TimerMode.FOCUS)
+
+    // 底部栏只需要 recordsState 的少量字段，避免全量订阅
+    val recordsBottomBarState by remember(recordsViewModel) {
+        recordsViewModel.state.map { Triple(it.showAddTimerSheet, it.showAddCounterSheet, it.selectedTab) }
+            .distinctUntilChanged()
+    }.collectAsStateWithLifecycle(Triple(false, false, 0))
+
     val layoutDirection = LocalLayoutDirection.current
     val motionScheme = motionScheme
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
@@ -156,6 +168,24 @@ fun AppScreen(
     val cutoutInsets = WindowInsets.displayCutout.asPaddingValues()
 
     val backStack = rememberNavBackStack(Screen.Tasks.Main)
+
+    // 底部栏可见性条件：使用 derivedStateOf 避免每次 recompose 都重新计算
+    val currentScreen by remember { derivedStateOf { backStack.lastOrNull() } }
+    val showBottomBar by remember {
+        derivedStateOf {
+            currentScreen !is Screen.AOD &&
+                    currentScreen !is Screen.Collection.AddNote &&
+                    currentScreen !is Screen.Collection.EditNote &&
+                    !tasksState.showAddDialog && tasksState.editingTask == null &&
+                    !recordsBottomBarState.first && !recordsBottomBarState.second
+        }
+    }
+    val showFab by remember {
+        derivedStateOf {
+            currentScreen != Screen.Settings.Main &&
+                    (currentScreen != Screen.Records.Main || recordsBottomBarState.third == 1)
+        }
+    }
     val mainScreens = remember {
         listOf(
             NavItem(
@@ -207,11 +237,7 @@ fun AppScreen(
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
-                backStack.last() !is Screen.AOD &&
-                        backStack.last() !is Screen.Collection.AddNote &&
-                        backStack.last() !is Screen.Collection.EditNote &&
-                        !tasksState.showAddDialog && tasksState.editingTask == null &&
-                        !recordsState.showAddTimerSheet && !recordsState.showAddCounterSheet,
+                showBottomBar,
                 enter = slideInVertically(motionScheme.slowSpatialSpec()) { it },
                 exit = slideOutVertically(motionScheme.slowSpatialSpec()) { it }
             ) {
@@ -222,16 +248,16 @@ fun AppScreen(
                 }
 
                 val primary by animateColorAsState(
-                    if (uiState.timerMode == TimerMode.FOCUS) colorScheme.primary else colorScheme.tertiary
+                    if (timerMode == TimerMode.FOCUS) colorScheme.primary else colorScheme.tertiary
                 )
                 val onPrimary by animateColorAsState(
-                    if (uiState.timerMode == TimerMode.FOCUS) colorScheme.onPrimary else colorScheme.onTertiary
+                    if (timerMode == TimerMode.FOCUS) colorScheme.onPrimary else colorScheme.onTertiary
                 )
                 val primaryContainer by animateColorAsState(
-                    if (uiState.timerMode == TimerMode.FOCUS) colorScheme.primaryContainer else colorScheme.tertiaryContainer
+                    if (timerMode == TimerMode.FOCUS) colorScheme.primaryContainer else colorScheme.tertiaryContainer
                 )
                 val onPrimaryContainer by animateColorAsState(
-                    if (uiState.timerMode == TimerMode.FOCUS) colorScheme.onPrimaryContainer else colorScheme.onTertiaryContainer
+                    if (timerMode == TimerMode.FOCUS) colorScheme.onPrimaryContainer else colorScheme.onTertiaryContainer
                 )
 
                 Box(
@@ -282,10 +308,6 @@ fun AppScreen(
                         }
 
                         // Center FAB
-                        val currentScreen = backStack.lastOrNull()
-                        // 仅在任务页、收集页、次数记录页显示FAB；时长记录页和统计页不显示
-                        val showFab = currentScreen != Screen.Settings.Main &&
-                                (currentScreen != Screen.Records.Main || recordsState.selectedTab == 1)
                         AnimatedVisibility(
                             visible = showFab,
                             enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + fadeIn(),
@@ -341,22 +363,18 @@ fun AppScreen(
         },
         modifier = modifier
     ) { contentPadding ->
-        SharedTransitionLayout {
-            NavDisplay(
-                backStack = backStack,
-                onBack = backStack::onBack,
-                transitionSpec = {
-                    fadeIn(motionScheme.defaultEffectsSpec())
-                        .togetherWith(fadeOut(motionScheme.defaultEffectsSpec()))
-                },
-                popTransitionSpec = {
-                    fadeIn(motionScheme.defaultEffectsSpec())
-                        .togetherWith(fadeOut(motionScheme.defaultEffectsSpec()))
-                },
-                predictivePopTransitionSpec = {
-                    fadeIn(motionScheme.defaultEffectsSpec())
-                        .togetherWith(fadeOut(motionScheme.defaultEffectsSpec()))
-                },
+        NavDisplay(
+            backStack = backStack,
+            onBack = backStack::onBack,
+            transitionSpec = {
+                fadeIn(tween(200)) togetherWith fadeOut(tween(150))
+            },
+            popTransitionSpec = {
+                fadeIn(tween(200)) togetherWith fadeOut(tween(150))
+            },
+            predictivePopTransitionSpec = {
+                fadeIn(tween(200)) togetherWith fadeOut(tween(150))
+            },
                 entryProvider = entryProvider {
                     entry<Screen.Tasks.Main> {
                         TasksScreen(
@@ -418,7 +436,6 @@ fun AppScreen(
                     }
                 }
             )
-        }
     }
 
     AnimatedVisibility(
@@ -443,7 +460,6 @@ private fun NavToggleButton(
     onNavigate: () -> Unit,
     onNavigateHome: () -> Unit
 ) {
-    val motionScheme = motionScheme
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
             TooltipAnchorPosition.Above
@@ -472,14 +488,10 @@ private fun NavToggleButton(
             modifier = Modifier.height(56.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AnimatedContent(
-                    selected,
-                    transitionSpec = {
-                        (scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
-                            fadeIn(tween(200))) togetherWith
-                        (scaleOut(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)) +
-                            fadeOut(tween(200)))
-                    }
+                Crossfade(
+                    targetState = selected,
+                    animationSpec = tween(200),
+                    label = "navIcon"
                 ) { isSelected ->
                     Icon(
                         painterResource(if (isSelected) item.selectedIcon else item.unselectedIcon),
@@ -488,8 +500,8 @@ private fun NavToggleButton(
                 }
                 AnimatedVisibility(
                     visible = selected || wide,
-                    enter = expandHorizontally(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)),
-                    exit = shrinkHorizontally(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                    enter = expandHorizontally(tween(200)),
+                    exit = shrinkHorizontally(tween(200))
                 ) {
                     Text(
                         text = stringResource(item.label),

@@ -59,14 +59,14 @@ class RecordsViewModel(
 
     init {
         // 核心数据流：计时器、计数器、今日会话
+        // 注意：不直接 combine timerState，而是只提取需要的字段，避免计时器高频 emit 触发全量更新
         viewModelScope.launch(Dispatchers.IO) {
             combine(
                 customTimerRepository.getAllCustomTimers(),
                 counterRecordRepository.getAllCounters(),
                 timerSessionRepository.getSessionsByDate(LocalDate.now()),
-                stateRepository.timerState,
                 todayCounterEntries
-            ) { timers, counters, sessions, timerState, entries ->
+            ) { timers, counters, sessions, entries ->
                 val counterCounts = mutableMapOf<Long, Int>()
                 for (counter in counters) {
                     counterCounts[counter.id] = entries.find { it.counterId == counter.id }?.count ?: 0
@@ -76,12 +76,20 @@ class RecordsViewModel(
                     customTimers = timers,
                     counters = counters,
                     counterCounts = counterCounts,
-                    todaySessions = sessions,
+                    todaySessions = sessions
+                ) }
+            }.collect {}
+        }
+
+        // 计时器状态：单独收集，只更新需要的字段
+        viewModelScope.launch(Dispatchers.IO) {
+            stateRepository.timerState.collect { timerState ->
+                _state.update { it.copy(
                     timerState = timerState,
                     activeTimerId = timerState.activeTimerId,
                     infiniteFocusElapsed = if (timerState.infiniteFocus && timerState.timerRunning) timerState.elapsed else 0L
                 ) }
-            }.collect {}
+            }
         }
 
         // 统计数据流：今日各计划时长、今日完成次数、今日Stat、周期内会话、完成任务数、计数器变化
