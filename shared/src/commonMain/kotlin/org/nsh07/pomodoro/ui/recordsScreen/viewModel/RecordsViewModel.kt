@@ -128,6 +128,16 @@ class RecordsViewModel(
                 _state.update { it.copy(dailyTaskStats = stats, calendarDatesWithRecords = dates) }
             }
         }
+
+        // 周期内计数器条目数据流
+        viewModelScope.launch(Dispatchers.IO) {
+            _state.flatMapLatest { state ->
+                val (start, end) = getPeriodDates(state.statsPeriod)
+                counterRecordRepository.getEntriesBetweenDates(start, end)
+            }.collect { entries ->
+                _state.update { it.copy(periodCounterEntries = entries) }
+            }
+        }
     }
 
     fun onAction(action: RecordsAction) {

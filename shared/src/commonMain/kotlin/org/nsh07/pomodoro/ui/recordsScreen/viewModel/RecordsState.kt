@@ -18,6 +18,7 @@
 package org.nsh07.pomodoro.ui.recordsScreen.viewModel
 
 import androidx.compose.runtime.Immutable
+import org.nsh07.pomodoro.data.CounterEntry
 import org.nsh07.pomodoro.data.CounterRecord
 import org.nsh07.pomodoro.data.CustomTimer
 import org.nsh07.pomodoro.data.DailyTaskStat
@@ -47,6 +48,7 @@ data class RecordsState(
     val infiniteFocusElapsed: Long = 0L,
     val todayCompletedTaskCount: Int = 0,
     val todayCounterTotalChange: Int = 0,
+    val periodCounterEntries: List<CounterEntry> = emptyList(),
     val selectedCalendarDate: LocalDate = LocalDate.now(),
     val dailyTaskStats: List<DailyTaskStat> = emptyList(),
     val calendarDatesWithRecords: Set<LocalDate> = emptySet(),

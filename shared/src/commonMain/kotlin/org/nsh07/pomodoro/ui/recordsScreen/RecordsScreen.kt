@@ -798,6 +798,7 @@ private fun StatisticsTab(
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val countModelProducer = remember { CartesianChartModelProducer() }
+    val counterModelProducer = remember { CartesianChartModelProducer() }
 
     // 根据周期计算图表数据
     val chartData = remember(state.periodSessions, state.statsPeriod, state.infiniteFocusElapsed) {
@@ -865,6 +866,52 @@ private fun StatisticsTab(
         }
     }
 
+    // 计数器变化图表数据
+    val counterChartData = remember(state.periodCounterEntries, state.statsPeriod) {
+        when (state.statsPeriod) {
+            StatsPeriod.DAY -> {
+                // 按计数器分组显示各计数器今日次数
+                val entries = state.periodCounterEntries.filter { it.date == LocalDate.now() }
+                val labels = entries.map { entry ->
+                    state.counters.find { it.id == entry.counterId }?.title ?: "#${entry.counterId}"
+                }
+                val values = entries.map { it.count.toDouble() }
+                Pair(labels, values)
+            }
+            StatsPeriod.WEEK -> {
+                val labels = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
+                val values = MutableList(7) { 0.0 }
+                state.periodCounterEntries.forEach { entry ->
+                    val dayOfWeek = entry.date.dayOfWeek.value - 1
+                    values[dayOfWeek] += entry.count
+                }
+                Pair(labels, values)
+            }
+            StatsPeriod.MONTH -> {
+                val today = java.time.LocalDate.now()
+                val daysInMonth = today.lengthOfMonth()
+                val labels = (1..daysInMonth).map { "${it}" }
+                val values = MutableList(daysInMonth) { 0.0 }
+                state.periodCounterEntries.forEach { entry ->
+                    val day = entry.date.dayOfMonth - 1
+                    if (day in values.indices) {
+                        values[day] += entry.count
+                    }
+                }
+                Pair(labels, values)
+            }
+        }
+    }
+
+    LaunchedEffect(counterChartData) {
+        val (labels, values) = counterChartData
+        if (values.isNotEmpty() && values.any { it > 0 }) {
+            counterModelProducer.runTransaction {
+                columnSeries { series(values) }
+            }
+        }
+    }
+
     // 最高记录
     val bestRecord = remember(state.periodSessions) {
         state.periodSessions.maxByOrNull { it.actualDuration }
@@ -907,11 +954,11 @@ private fun StatisticsTab(
         }
 
         // 计数器变化概览
-        if (state.todayCounterTotalChange > 0) {
+        if (state.counters.isNotEmpty()) {
             item(contentType = "counter_summary") {
                 SummaryCard(
                     title = stringResource(Res.string.counter_total_change),
-                    value = "+${state.todayCounterTotalChange}",
+                    value = if (state.todayCounterTotalChange > 0) "+${state.todayCounterTotalChange}" else "${state.todayCounterTotalChange}",
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1032,6 +1079,31 @@ private fun StatisticsTab(
                         labels = chartData.labels,
                         columnColor = colorScheme.tertiary
                     )
+                }
+            }
+        }
+
+        // 计数器变化图表
+        if (counterChartData.second.isNotEmpty() && counterChartData.second.any { it > 0 }) {
+            item(contentType = "counter_chart") {
+                Surface(
+                    shape = shapes.large,
+                    color = colorScheme.surfaceBright,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            stringResource(Res.string.counter_total_change),
+                            style = typography.titleSmall,
+                            color = colorScheme.secondary
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        SimpleColumnChart(
+                            modelProducer = counterModelProducer,
+                            labels = counterChartData.first,
+                            columnColor = colorScheme.secondary
+                        )
+                    }
                 }
             }
         }

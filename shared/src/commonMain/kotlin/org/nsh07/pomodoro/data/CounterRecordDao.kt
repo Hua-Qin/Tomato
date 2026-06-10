@@ -71,4 +71,7 @@ interface CounterRecordDao {
 
     @Query("SELECT COALESCE(SUM(count), 0) FROM counter_entry WHERE date = :date")
     fun getTotalCounterChangeByDate(date: LocalDate): Flow<Int>
+
+    @Query("SELECT * FROM counter_entry WHERE date BETWEEN :startDate AND :endDate")
+    fun getEntriesBetweenDates(startDate: LocalDate, endDate: LocalDate): Flow<List<CounterEntry>>
 }
