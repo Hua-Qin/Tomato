@@ -141,7 +141,6 @@
     <string name="choose_folder">选择文件夹</string>
     <string name="choose_file">选择文件</string>
     <string name="or_enter_path">或手动输入路径</string>
-    <string name="manual_path_hint">文件路径</string>
     <string name="backup_path_hint">备份保存目录路径</string>
     <string name="restore_path_hint">要恢复的备份文件路径</string>
     <string name="restart_app">重启应用</string>

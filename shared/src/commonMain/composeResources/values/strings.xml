@@ -146,7 +146,6 @@
     <string name="choose_folder">Choose folder</string>
     <string name="choose_file">Choose file</string>
     <string name="or_enter_path">Or enter path manually</string>
-    <string name="manual_path_hint">File path</string>
     <string name="backup_path_hint">Directory path to save backup</string>
     <string name="restore_path_hint">Backup file path to restore</string>
     <string name="restart_app">Restart app</string>

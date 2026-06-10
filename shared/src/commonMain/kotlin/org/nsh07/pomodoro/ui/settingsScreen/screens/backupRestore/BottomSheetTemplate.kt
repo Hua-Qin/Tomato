@@ -66,7 +66,6 @@ import tomato.shared.generated.resources.Res
 import tomato.shared.generated.resources.cancel
 import tomato.shared.generated.resources.check
 import tomato.shared.generated.resources.folder
-import tomato.shared.generated.resources.manual_path_hint
 import tomato.shared.generated.resources.or_enter_path
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
