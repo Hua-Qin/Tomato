@@ -1,0 +1,132 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+    "entities": [
+      {
+        "tableName": "int_preference",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `value` INTEGER NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {"fieldPath": "key", "columnName": "key", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "value", "columnName": "value", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": false, "columnNames": ["key"]}
+      },
+      {
+        "tableName": "boolean_preference",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `value` INTEGER NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {"fieldPath": "key", "columnName": "key", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "value", "columnName": "value", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": false, "columnNames": ["key"]}
+      },
+      {
+        "tableName": "string_preference",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {"fieldPath": "key", "columnName": "key", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "value", "columnName": "value", "affinity": "TEXT", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": false, "columnNames": ["key"]}
+      },
+      {
+        "tableName": "stat",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`date` TEXT NOT NULL, `focusTimeQ1` INTEGER NOT NULL, `focusTimeQ2` INTEGER NOT NULL, `focusTimeQ3` INTEGER NOT NULL, `focusTimeQ4` INTEGER NOT NULL, `breakTime` INTEGER NOT NULL, PRIMARY KEY(`date`))",
+        "fields": [
+          {"fieldPath": "date", "columnName": "date", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "focusTimeQ1", "columnName": "focusTimeQ1", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "focusTimeQ2", "columnName": "focusTimeQ2", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "focusTimeQ3", "columnName": "focusTimeQ3", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "focusTimeQ4", "columnName": "focusTimeQ4", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "breakTime", "columnName": "breakTime", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": false, "columnNames": ["date"]}
+      },
+      {
+        "tableName": "task",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `text` TEXT NOT NULL, `completed` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `completedAt` INTEGER, `sortOrder` INTEGER NOT NULL)",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "text", "columnName": "text", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "completed", "columnName": "completed", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "createdAt", "columnName": "createdAt", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "completedAt", "columnName": "completedAt", "affinity": "INTEGER", "notNull": false},
+          {"fieldPath": "sortOrder", "columnName": "sortOrder", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]}
+      },
+      {
+        "tableName": "note",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `content` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `pinned` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL)",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "title", "columnName": "title", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "content", "columnName": "content", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "createdAt", "columnName": "createdAt", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "updatedAt", "columnName": "updatedAt", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "pinned", "columnName": "pinned", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "sortOrder", "columnName": "sortOrder", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]}
+      },
+      {
+        "tableName": "timer_session",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timerName` TEXT NOT NULL, `actualDuration` INTEGER NOT NULL, `startedAt` INTEGER NOT NULL, `date` TEXT NOT NULL)",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "timerName", "columnName": "timerName", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "actualDuration", "columnName": "actualDuration", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "startedAt", "columnName": "startedAt", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "date", "columnName": "date", "affinity": "TEXT", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]}
+      },
+      {
+        "tableName": "counter_record",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL)",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "title", "columnName": "title", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "createdAt", "columnName": "createdAt", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "sortOrder", "columnName": "sortOrder", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]}
+      },
+      {
+        "tableName": "counter_entry",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `counterId` INTEGER NOT NULL, `date` TEXT NOT NULL, `count` INTEGER NOT NULL)",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "counterId", "columnName": "counterId", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "date", "columnName": "date", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "count", "columnName": "count", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]},
+        "indices": []
+      },
+      {
+        "tableName": "custom_timer",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `focusDuration` INTEGER NOT NULL, `shortBreakDuration` INTEGER NOT NULL, `longBreakDuration` INTEGER NOT NULL, `sessionLength` INTEGER NOT NULL, `alarmEnabled` INTEGER NOT NULL, `vibrateEnabled` INTEGER NOT NULL, `autoStartNext` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL)",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "name", "columnName": "name", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "focusDuration", "columnName": "focusDuration", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "shortBreakDuration", "columnName": "shortBreakDuration", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "longBreakDuration", "columnName": "longBreakDuration", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "sessionLength", "columnName": "sessionLength", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "alarmEnabled", "columnName": "alarmEnabled", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "vibrateEnabled", "columnName": "vibrateEnabled", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "autoStartNext", "columnName": "autoStartNext", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "sortOrder", "columnName": "sortOrder", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]}
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6')"
+    ]
+  }
+}
