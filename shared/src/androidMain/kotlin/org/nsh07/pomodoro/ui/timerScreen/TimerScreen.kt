@@ -423,7 +423,7 @@ fun SharedTransitionScope.TimerScreen(
                                                 )
                                         )
                                         AnimatedVisibility(
-                                            expanded,
+                                            expanded && !timerState.infiniteFocus,
                                             enter = fadeIn(motionScheme.defaultEffectsSpec()) +
                                                     expandVertically(motionScheme.defaultSpatialSpec()),
                                             exit = fadeOut(motionScheme.defaultEffectsSpec()) +
