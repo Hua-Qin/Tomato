@@ -697,122 +697,124 @@ fun SharedTransitionScope.TimerScreen(
             }
         },
         supportingPane = {
-            val isFocus = timerState.timerMode == TimerMode.FOCUS
-            AnimatedPane {
-                LazyColumn(
-                    contentPadding = contentPadding,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier
-                        .background(detailPaneTopBarColors.containerColor)
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                ) {
-                    item {
-                        TopAppBar(
-                            title = {
-                                Text(
-                                    text = stringResource(Res.string.up_next),
-                                    fontFamily = LocalAppFonts.current.topBarTitle,
-                                    maxLines = 1
-                                )
-                            },
-                            subtitle = {},
-                            windowInsets = WindowInsets(),
-                            colors = detailPaneTopBarColors
-                        )
-                    }
-                    items(timerState.totalFocusCount) {
-                        val currentSession =
-                            it + 1 == timerState.currentFocusCount // currentFocusCount is 1-indexed
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            SegmentedListItem(
-                                onClick = {},
-                                enabled = it + 1 >= timerState.currentFocusCount,
-                                selected = currentSession && isFocus,
-                                shapes = segmentedListItemShapes(0, 2),
-                                colors = listItemColors,
-                                leadingContent = {
-                                    AnimatedContent(
-                                        if (currentSession && isFocus) 1
-                                        else if (it < timerState.currentFocusCount) 2
-                                        else 3
-                                    ) { show ->
-                                        when (show) {
-                                            1 -> Icon(
-                                                painterResource(Res.drawable.in_progress_40dp),
-                                                null
-                                            )
-
-                                            2 -> Icon(
-                                                painterResource(Res.drawable.check_circle_40dp),
-                                                null
-                                            )
-
-                                            else -> Icon(
-                                                painterResource(Res.drawable.not_started_40dp),
-                                                null
-                                            )
-                                        }
-                                    }
-                                },
-                                supportingContent = {
+            if (!timerState.infiniteFocus) {
+                val isFocus = timerState.timerMode == TimerMode.FOCUS
+                AnimatedPane {
+                    LazyColumn(
+                        contentPadding = contentPadding,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .background(detailPaneTopBarColors.containerColor)
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        item {
+                            TopAppBar(
+                                title = {
                                     Text(
-                                        millisecondsToStr(settingsState.focusTime),
+                                        text = stringResource(Res.string.up_next),
+                                        fontFamily = LocalAppFonts.current.topBarTitle,
                                         maxLines = 1
                                     )
-                                }
-                            ) {
-                                Text(
-                                    stringResource(Res.string.focus),
-                                    maxLines = 1
-                                )
-                            }
-
-                            SegmentedListItem(
-                                onClick = {},
-                                enabled = it + 1 >= timerState.currentFocusCount,
-                                selected = currentSession && !isFocus,
-                                shapes = segmentedListItemShapes(1, 2),
-                                colors = listItemColors,
-                                leadingContent = {
-                                    AnimatedContent(
-                                        if (currentSession && !isFocus) 1
-                                        else if (it + 1 < timerState.currentFocusCount) 2
-                                        else 3
-                                    ) { show ->
-                                        when (show) {
-                                            1 -> Icon(
-                                                painterResource(Res.drawable.in_progress_40dp),
-                                                null
-                                            )
-
-                                            2 -> Icon(
-                                                painterResource(Res.drawable.check_circle_40dp),
-                                                null
-                                            )
-
-                                            else -> Icon(
-                                                painterResource(Res.drawable.not_started_40dp),
-                                                null
-                                            )
-                                        }
-                                    }
                                 },
-                                supportingContent = {
-                                    Text(
-                                        if (it != timerState.totalFocusCount - 1) millisecondsToStr(
-                                            settingsState.shortBreakTime
+                                subtitle = {},
+                                windowInsets = WindowInsets(),
+                                colors = detailPaneTopBarColors
+                            )
+                        }
+                        items(timerState.totalFocusCount) {
+                            val currentSession =
+                                it + 1 == timerState.currentFocusCount // currentFocusCount is 1-indexed
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                SegmentedListItem(
+                                    onClick = {},
+                                    enabled = it + 1 >= timerState.currentFocusCount,
+                                    selected = currentSession && isFocus,
+                                    shapes = segmentedListItemShapes(0, 2),
+                                    colors = listItemColors,
+                                    leadingContent = {
+                                        AnimatedContent(
+                                            if (currentSession && isFocus) 1
+                                            else if (it < timerState.currentFocusCount) 2
+                                            else 3
+                                        ) { show ->
+                                            when (show) {
+                                                1 -> Icon(
+                                                    painterResource(Res.drawable.in_progress_40dp),
+                                                    null
+                                                )
+
+                                                2 -> Icon(
+                                                    painterResource(Res.drawable.check_circle_40dp),
+                                                    null
+                                                )
+
+                                                else -> Icon(
+                                                    painterResource(Res.drawable.not_started_40dp),
+                                                    null
+                                                )
+                                            }
+                                        }
+                                    },
+                                    supportingContent = {
+                                        Text(
+                                            millisecondsToStr(settingsState.focusTime),
+                                            maxLines = 1
                                         )
-                                        else millisecondsToStr(settingsState.longBreakTime),
+                                    }
+                                ) {
+                                    Text(
+                                        stringResource(Res.string.focus),
                                         maxLines = 1
                                     )
                                 }
-                            ) {
-                                Text(
-                                    if (it != timerState.totalFocusCount - 1) stringResource(Res.string.short_break)
-                                    else stringResource(Res.string.long_break),
-                                    maxLines = 1
-                                )
+
+                                SegmentedListItem(
+                                    onClick = {},
+                                    enabled = it + 1 >= timerState.currentFocusCount,
+                                    selected = currentSession && !isFocus,
+                                    shapes = segmentedListItemShapes(1, 2),
+                                    colors = listItemColors,
+                                    leadingContent = {
+                                        AnimatedContent(
+                                            if (currentSession && !isFocus) 1
+                                            else if (it + 1 < timerState.currentFocusCount) 2
+                                            else 3
+                                        ) { show ->
+                                            when (show) {
+                                                1 -> Icon(
+                                                    painterResource(Res.drawable.in_progress_40dp),
+                                                    null
+                                                )
+
+                                                2 -> Icon(
+                                                    painterResource(Res.drawable.check_circle_40dp),
+                                                    null
+                                                )
+
+                                                else -> Icon(
+                                                    painterResource(Res.drawable.not_started_40dp),
+                                                    null
+                                                )
+                                            }
+                                        }
+                                    },
+                                    supportingContent = {
+                                        Text(
+                                            if (it != timerState.totalFocusCount - 1) millisecondsToStr(
+                                                settingsState.shortBreakTime
+                                            )
+                                            else millisecondsToStr(settingsState.longBreakTime),
+                                            maxLines = 1
+                                        )
+                                    }
+                                ) {
+                                    Text(
+                                        if (it != timerState.totalFocusCount - 1) stringResource(Res.string.short_break)
+                                        else stringResource(Res.string.long_break),
+                                        maxLines = 1
+                                    )
+                                }
                             }
                         }
                     }
