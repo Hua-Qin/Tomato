@@ -95,7 +95,6 @@ import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -152,7 +151,7 @@ import tomato.shared.generated.resources.end_session
 import tomato.shared.generated.resources.short_break
 import tomato.shared.generated.resources.stop
 import tomato.shared.generated.resources.timer_reset_message
-import tomato.shared.generated.resources.timer_session_count
+
 import tomato.shared.generated.resources.timer_settings_reset_info
 import tomato.shared.generated.resources.undo
 import tomato.shared.generated.resources.up_next
@@ -376,9 +375,6 @@ fun SharedTransitionScope.TimerScreen(
                                         }
                                     }
                                     var expanded by remember { mutableStateOf(timerState.showBrandTitle) }
-                                    val shouldShowSessionCount by remember {
-                                        derivedStateOf { expanded && !timerState.infiniteFocus }
-                                    }
                                     val timerResetSettingsInfo =
                                         stringResource(Res.string.timer_settings_reset_info)
                                     Column(
@@ -386,11 +382,7 @@ fun SharedTransitionScope.TimerScreen(
                                         modifier = Modifier
                                             .clip(shapes.largeIncreased)
                                             .combinedClickable(
-                                                onClick = {
-                                                    if (!timerState.infiniteFocus) {
-                                                        expanded = !expanded
-                                                    }
-                                                },
+                                                onClick = { expanded = !expanded },
                                                 onLongClick = {
                                                     if (!timerState.timerRunning) onAction(
                                                         TimerAction.SetInfiniteFocus(
@@ -430,24 +422,6 @@ fun SharedTransitionScope.TimerScreen(
                                                     animatedVisibilityScope = LocalNavAnimatedContentScope.current
                                                 )
                                         )
-                                        AnimatedVisibility(
-                                            shouldShowSessionCount,
-                                            enter = fadeIn(motionScheme.defaultEffectsSpec()) +
-                                                    expandVertically(motionScheme.defaultSpatialSpec()),
-                                            exit = fadeOut(motionScheme.defaultEffectsSpec()) +
-                                                    shrinkVertically(motionScheme.defaultSpatialSpec())
-                                        ) {
-                                            Text(
-                                                stringResource(
-                                                    Res.string.timer_session_count,
-                                                    timerState.currentFocusCount,
-                                                    timerState.totalFocusCount
-                                                ),
-                                                fontFamily = typography.bodyLarge.fontFamily,
-                                                style = typography.titleLarge,
-                                                color = colorScheme.outline
-                                            )
-                                        }
                                     }
                                 }
                                 val interactionSources =

@@ -522,13 +522,6 @@ private fun TimerDisplay(
                         color = colorScheme.onSurfaceVariant
                     )
                 }
-                if (timerState.totalFocusCount > 1) {
-                    Text(
-                        text = "${timerState.currentFocusCount} / ${timerState.totalFocusCount}",
-                        style = typography.bodySmall,
-                        color = colorScheme.onSurfaceVariant
-                    )
-                }
             }
         }
 
