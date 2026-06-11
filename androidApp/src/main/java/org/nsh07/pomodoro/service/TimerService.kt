@@ -779,6 +779,7 @@ class TimerService : Service(), KoinComponent {
                 _timerState.update { currentState ->
                     currentState.copy(
                         infiniteFocus = true,
+                        showBrandTitle = false,
                         timerMode = TimerMode.FOCUS,
                         timeStr = millisecondsToStr(0),
                         totalTime = Long.MAX_VALUE,
@@ -796,6 +797,7 @@ class TimerService : Service(), KoinComponent {
                 _timerState.update { currentState ->
                     currentState.copy(
                         infiniteFocus = false,
+                        showBrandTitle = false,
                         timerMode = TimerMode.FOCUS,
                         timeStr = millisecondsToStr(settingsState.focusTime),
                         totalTime = settingsState.focusTime,

@@ -95,6 +95,7 @@ import androidx.compose.material3.adaptive.navigation.rememberSupportingPaneScaf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -375,6 +376,9 @@ fun SharedTransitionScope.TimerScreen(
                                         }
                                     }
                                     var expanded by remember { mutableStateOf(timerState.showBrandTitle) }
+                                    val shouldShowSessionCount by remember {
+                                        derivedStateOf { expanded && !timerState.infiniteFocus }
+                                    }
                                     val timerResetSettingsInfo =
                                         stringResource(Res.string.timer_settings_reset_info)
                                     Column(
@@ -382,7 +386,11 @@ fun SharedTransitionScope.TimerScreen(
                                         modifier = Modifier
                                             .clip(shapes.largeIncreased)
                                             .combinedClickable(
-                                                onClick = { expanded = !expanded },
+                                                onClick = {
+                                                    if (!timerState.infiniteFocus) {
+                                                        expanded = !expanded
+                                                    }
+                                                },
                                                 onLongClick = {
                                                     if (!timerState.timerRunning) onAction(
                                                         TimerAction.SetInfiniteFocus(
@@ -423,7 +431,7 @@ fun SharedTransitionScope.TimerScreen(
                                                 )
                                         )
                                         AnimatedVisibility(
-                                            expanded && !timerState.infiniteFocus,
+                                            shouldShowSessionCount,
                                             enter = fadeIn(motionScheme.defaultEffectsSpec()) +
                                                     expandVertically(motionScheme.defaultSpatialSpec()),
                                             exit = fadeOut(motionScheme.defaultEffectsSpec()) +
